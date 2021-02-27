@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "598737940412",
+    "project_id": "zopek-de839",
+    "storage_bucket": "zopek-de839.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:598737940412:android:30b1afe938f737604545b9",
+        "android_client_info": {
+          "package_name": "com.example.zopek"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "598737940412-ige9eg4oeu97gvfkt5q1a2acul40g3am.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.zopek",
+            "certificate_hash": "4fb25152caaf209d2caa2d7f81c040110e846b4c"
+          }
+        },
+        {
+          "client_id": "598737940412-btc122tf7mj8ebdd21ch5t37mqfcd50s.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAu689N2ZUEAaXY9s580EcHbGAMHQFU2E4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "598737940412-btc122tf7mj8ebdd21ch5t37mqfcd50s.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
