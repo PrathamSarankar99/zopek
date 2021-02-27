@@ -353,9 +353,6 @@ class _ChatsState extends State<Chats> {
               _queryDocumentSnapshot.get("Message"),
             ];
       _queryDocumentSnapshot = null;
-      //This line is useless erase it later.
-      //This line is useless erase it later.
-
       FirebaseFirestore.instance
           .collection("ChatRooms")
           .doc(widget.chatRoomID)
@@ -364,13 +361,13 @@ class _ChatsState extends State<Chats> {
         visible = docSnapshot.get("Users");
         map = {
           "ImageURL": imageURL,
-          "Message": Message.message.trim(),
-          "Sender": Constants.userName,
           "Time": DateTime.now(),
+          "Sender": Constants.userName,
+          "Message": Message.message.trim(),
           "Visible": visible,
           "RepliedTo": repliedTo,
         };
-        await dbs.sendTextMessage(widget.chatRoomID, map);
+        await dbs.sendMessage(widget.chatRoomID, map);
         _autoScrollController.animateTo(
             _autoScrollController.position.minScrollExtent,
             duration: Duration(milliseconds: 150),

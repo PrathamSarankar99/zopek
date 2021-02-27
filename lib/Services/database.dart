@@ -59,17 +59,7 @@ class DataBaseServices {
         .snapshots();
   }
 
-  Future<void> sendImageMessage(
-      String chatRoomID, Map<String, dynamic> messageMap) async {
-    return await FirebaseFirestore.instance
-        .collection("ChatRooms")
-        .doc(chatRoomID)
-        .collection("Messages")
-        .doc()
-        .set(messageMap);
-  }
-
-  Future<void> sendTextMessage(
+  Future<void> sendMessage(
       String chatRoomID, Map<String, dynamic> messageMap) async {
     return await FirebaseFirestore.instance
         .collection("ChatRooms")
