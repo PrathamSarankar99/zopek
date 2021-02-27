@@ -353,7 +353,7 @@ class _ChatsState extends State<Chats> {
               _queryDocumentSnapshot.get("Message"),
             ];
       _queryDocumentSnapshot = null;
-
+      //This line is useless erase it later.
       FirebaseFirestore.instance
           .collection("ChatRooms")
           .doc(widget.chatRoomID)
