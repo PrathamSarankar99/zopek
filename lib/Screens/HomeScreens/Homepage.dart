@@ -5,6 +5,7 @@ import 'package:page_transition/page_transition.dart';
 import 'package:zopek/Screens/HomeScreens/SearchScreen.dart';
 import 'package:zopek/Services/Constants.dart';
 import 'package:zopek/Services/Helper.dart';
+import 'package:zopek/Services/Utils.dart';
 import 'package:zopek/Services/database.dart';
 import 'package:zopek/Screens/SettingScreens/Settings.dart' as settings;
 import 'package:zopek/Widgets/StatusWidget.dart';
@@ -19,6 +20,7 @@ class Homepage extends StatefulWidget {
 class _HomepageState extends State<Homepage> {
   DataBaseServices dataBaseServices = new DataBaseServices();
   Stream<QuerySnapshot> querySnapshotStream;
+  Utils utils = new Utils();
   List<bool> isSelected = [];
   final double maxHeight = 0.82;
   final double minHeight = 0.63;
@@ -28,6 +30,7 @@ class _HomepageState extends State<Homepage> {
     super.initState();
     populateSelection();
     deleteEmptyChatRooms();
+    //If you don't wanna delete empty chat rooms delete this method, everthing is set for it.
     updateLastMessageTime();
     getUserDetails();
   }
@@ -166,10 +169,10 @@ class _HomepageState extends State<Homepage> {
                                         itemCount:
                                             roomSnapshot.data.docs.length,
                                         itemBuilder: (context, index) {
-                                          String username = roomSnapshot
+                                          String uid = roomSnapshot
                                                       .data.docs[index]
                                                       .get("Users")[0] ==
-                                                  Constants.userName
+                                                  Constants.uid
                                               ? roomSnapshot.data.docs[index]
                                                   .get("Users")[1]
                                               : roomSnapshot.data.docs[index]
@@ -177,27 +180,25 @@ class _HomepageState extends State<Homepage> {
 
                                           return StreamBuilder(
                                               stream: dataBaseServices
-                                                  .getUserDetailsByUsername(
-                                                      username),
+                                                  .getUserByID(uid),
                                               builder: (context, userSnapshot) {
                                                 if (!roomSnapshot.hasData ||
                                                     !userSnapshot.hasData) {
                                                   return Container();
                                                 }
                                                 String username = userSnapshot
-                                                            .data.docs[0]
+                                                            .data
                                                             .get("UserName")
                                                             .toString()
                                                             .length >
                                                         15
                                                     ? '${userSnapshot.data.docs[0].get("UserName").toString().substring(0, 15)}...'
-                                                    : userSnapshot.data.docs[0]
+                                                    : userSnapshot.data
                                                         .get("UserName")
                                                         .toString();
                                                 return StatusWidget(
                                                     username: username,
-                                                    photoURL: userSnapshot
-                                                        .data.docs[0]
+                                                    photoURL: userSnapshot.data
                                                         .get("PhotoURL"),
                                                     color: Colors.blue);
                                               });
@@ -545,18 +546,16 @@ class _HomepageState extends State<Homepage> {
                                     padding: EdgeInsets.only(bottom: 10),
                                     itemCount: roomSnapshot.data.docs.length,
                                     itemBuilder: (context, index) {
-                                      String username = roomSnapshot
-                                                  .data.docs[index]
+                                      String uid = roomSnapshot.data.docs[index]
                                                   .get("Users")[0] ==
-                                              Constants.userName
+                                              Constants.uid
                                           ? roomSnapshot.data.docs[index]
                                               .get("Users")[1]
                                           : roomSnapshot.data.docs[index]
                                               .get("Users")[0];
-                                      return StreamBuilder<QuerySnapshot>(
-                                          stream: DataBaseServices()
-                                              .getUserDetailsByUsername(
-                                                  username),
+                                      return StreamBuilder<DocumentSnapshot>(
+                                          stream:
+                                              dataBaseServices.getUserByID(uid),
                                           builder: (context, userSnapshot) {
                                             if (!userSnapshot.hasData) {
                                               return Container(
@@ -582,14 +581,8 @@ class _HomepageState extends State<Homepage> {
                                             return FutureBuilder<QuerySnapshot>(
                                               future: FirebaseFirestore.instance
                                                   .collection("ChatRooms")
-                                                  .doc(username
-                                                              .substring(0, 1)
-                                                              .codeUnitAt(0) >
-                                                          Constants.userName
-                                                              .substring(0, 1)
-                                                              .codeUnitAt(0)
-                                                      ? '${Constants.userName}and$username'
-                                                      : '${username}and${Constants.userName}')
+                                                  .doc(utils.getChatRoomID(
+                                                      Constants.uid, uid))
                                                   .collection("Messages")
                                                   .orderBy("Time",
                                                       descending: true)
@@ -600,7 +593,6 @@ class _HomepageState extends State<Homepage> {
                                                 return userMessageListTile(
                                                     false,
                                                     context,
-                                                    username,
                                                     userSnapshot,
                                                     index,
                                                     lastMessageSnapshot);
@@ -621,33 +613,11 @@ class _HomepageState extends State<Homepage> {
     );
   }
 
-  StreamBuilder storyBuilder(
-      AsyncSnapshot<QuerySnapshot> roomSnapshot, String username) {
-    return StreamBuilder(
-        stream: dataBaseServices.getUserDetailsByUsername(username),
-        builder: (context, userSnapshot) {
-          if (!roomSnapshot.hasData || !userSnapshot.hasData) {
-            return Container();
-          }
-          String username = userSnapshot.data.docs[0]
-                      .get("UserName")
-                      .toString()
-                      .length >
-                  15
-              ? '${userSnapshot.data.docs[0].get("UserName").toString().substring(0, 15)}...'
-              : userSnapshot.data.docs[0].get("UserName").toString();
-          return StatusWidget(
-              username: username,
-              photoURL: userSnapshot.data.docs[0].get("PhotoURL"),
-              color: Colors.blue);
-        });
-  }
-
   deleteEmptyChatRooms() async {
-    String username = await Helper.getUserNameSP();
+    String uid = await Helper.getUserID();
     QuerySnapshot snapshot = await FirebaseFirestore.instance
         .collection("ChatRooms")
-        .where("Users", arrayContains: username)
+        .where("Users", arrayContains: uid)
         .get();
     snapshot.docs.forEach((element) async {
       QuerySnapshot snapshot = await FirebaseFirestore.instance
@@ -676,7 +646,7 @@ class _HomepageState extends State<Homepage> {
           .orderBy("Time", descending: true)
           .limit(1)
           .get();
-      if (lastmessagesnapshot.size != null) {
+      if (lastmessagesnapshot.docs.isNotEmpty) {
         element.reference.update({
           "LastMessageTime": lastmessagesnapshot.docs[0].get("Time"),
         });
@@ -685,10 +655,10 @@ class _HomepageState extends State<Homepage> {
   }
 
   void populateSelection() async {
-    String username = await Helper.getUserNameSP();
+    String uid = await Helper.getUserID();
     QuerySnapshot snapshot = await FirebaseFirestore.instance
         .collection("ChatRooms")
-        .where("Users", arrayContains: username)
+        .where("Users", arrayContains: uid)
         .get();
     int length = snapshot.docs.length;
     isSelected = List.generate(length, (index) => false, growable: true);
@@ -698,7 +668,6 @@ class _HomepageState extends State<Homepage> {
   Widget userMessageListTile(
       bool isSelected,
       BuildContext context,
-      String username,
       AsyncSnapshot userSnapshot,
       int index,
       AsyncSnapshot lastMessageSnapshot) {
@@ -729,13 +698,9 @@ class _HomepageState extends State<Homepage> {
                     context,
                     PageTransition(
                         child: Chats(
-                          chatRoomID: username.substring(0, 1).codeUnitAt(0) >
-                                  Constants.userName
-                                      .substring(0, 1)
-                                      .codeUnitAt(0)
-                              ? '${Constants.userName}and$username'
-                              : '${username}and${Constants.userName}',
-                          uid: userSnapshot.data.docs[0].id,
+                          chatRoomID: utils.getChatRoomID(
+                              Constants.uid, userSnapshot.data.id),
+                          uid: userSnapshot.data.id,
                         ),
                         type: PageTransitionType.fade,
                         duration: Duration(milliseconds: 300)));
@@ -744,9 +709,7 @@ class _HomepageState extends State<Homepage> {
             title: Row(
               children: [
                 Text(
-                  username.length > 15
-                      ? username.substring(0, 15) + "..."
-                      : username,
+                  userSnapshot.data.get('UserName'),
                   style: TextStyle(
                     fontSize: 20,
                     color: Colors.black,
@@ -764,8 +727,8 @@ class _HomepageState extends State<Homepage> {
                         width: 50,
                         height: 50,
                         child: CircleAvatar(
-                          backgroundImage: NetworkImage(
-                              userSnapshot.data.docs[0].get("PhotoURL")),
+                          backgroundImage:
+                              NetworkImage(userSnapshot.data.get("PhotoURL")),
                         ),
                       ),
                       Container(
@@ -779,11 +742,12 @@ class _HomepageState extends State<Homepage> {
                     width: 50,
                     height: 50,
                     child: CircleAvatar(
-                      backgroundImage: NetworkImage(
-                          userSnapshot.data.docs[0].get("PhotoURL")),
+                      backgroundImage:
+                          NetworkImage(userSnapshot.data.get("PhotoURL")),
                     ),
                   ),
-            subtitle: (!lastMessageSnapshot.hasData)
+            subtitle: (!lastMessageSnapshot.hasData ||
+                    lastMessageSnapshot.data.docs.isEmpty)
                 ? Container()
                 : Padding(
                     padding: const EdgeInsets.only(top: 5),
@@ -822,20 +786,20 @@ class _HomepageState extends State<Homepage> {
     return isSelected.where((element) => element).length;
   }
 
-  //Phono*** is coming please see to that.
   getUserDetails() async {
     Stream<DocumentSnapshot> snap;
     String uid = await Helper.getUserID();
-    snap = await dataBaseServices.getUserByID(uid);
+    snap = dataBaseServices.getUserByID(uid);
     snap.forEach((element) async {
       Constants.userName = element.get("UserName");
       Constants.fullName = element.get("FullName");
       Constants.email = element.get("Email");
       Constants.photoURL = element.get("PhotoURL");
       Constants.phoneNo = element.get("PhoneNo");
+      Constants.uid = element.id;
       setState(() {
         querySnapshotStream =
-            dataBaseServices.getExistingChatRooms(Constants.userName);
+            dataBaseServices.getExistingChatRooms(Constants.uid);
       });
     });
   }

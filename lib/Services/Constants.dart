@@ -4,4 +4,5 @@ class Constants {
   static String email = '';
   static String photoURL = '';
   static String phoneNo = '';
+  static String uid = '';
 }

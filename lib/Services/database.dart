@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:zopek/Services/Constants.dart';
 import 'package:zopek/Services/Helper.dart';
 
 class DataBaseServices {
@@ -21,14 +20,7 @@ class DataBaseServices {
         .get();
   }
 
-  Stream<QuerySnapshot> getUserDetailsByUsername(String username) {
-    return FirebaseFirestore.instance
-        .collection("Users")
-        .where("UserName", isEqualTo: username)
-        .snapshots();
-  }
-
-  Future<Stream<DocumentSnapshot>> getUserByID(String uid) async {
+  Stream<DocumentSnapshot> getUserByID(String uid) {
     return FirebaseFirestore.instance.collection("Users").doc(uid).snapshots();
   }
 

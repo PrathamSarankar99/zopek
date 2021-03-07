@@ -13,65 +13,28 @@ class ImageMessage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-            context,
-            PageTransition(
-                child: Scaffold(
-                  appBar: AppBar(
-                    title: Text(username),
-                    actions: [
-                      Padding(
-                        padding: EdgeInsets.fromLTRB(0, 0, 15, 0),
-                        child: Icon(Icons.star_border),
-                      ),
-                      Padding(
-                        padding: EdgeInsets.fromLTRB(0, 0, 15, 0),
-                        child: Icon(Icons.forward),
-                      ),
-                      Padding(
-                        padding: EdgeInsets.fromLTRB(0, 0, 15, 0),
-                        child: Icon(Icons.more_vert),
-                      ),
-                    ],
-                    brightness: Brightness.dark,
-                    backgroundColor: Colors.black.withBlue(40),
-                  ),
-                  body: PhotoView(
-                    backgroundDecoration: BoxDecoration(
-                      color: Colors.black.withBlue(40),
-                    ),
-                    heroAttributes: PhotoViewHeroAttributes(tag: imageURL),
-                    imageProvider: NetworkImage(imageURL),
-                  ),
-                ),
-                type: PageTransitionType.fade));
-      },
-      child: Hero(
-        tag: imageURL,
+    return Hero(
+      tag: imageURL,
+      child: Container(
+        alignment: byme ? Alignment.centerRight : Alignment.centerLeft,
+        height: 180,
+        color: isSelected
+            ? (!byme
+                ? Colors.amber.shade300.withOpacity(0.5)
+                : Color.fromRGBO(23, 105, 164, 0.5))
+            : Colors.transparent,
         child: Container(
-          alignment: byme ? Alignment.centerRight : Alignment.centerLeft,
-          height: 180,
-          color: isSelected
-              ? (!byme
-                  ? Colors.amber.shade300.withOpacity(0.5)
-                  : Color.fromRGBO(23, 105, 164, 0.5))
-              : Colors.transparent,
-          child: Container(
-            margin:
-                byme ? EdgeInsets.only(right: 22) : EdgeInsets.only(left: 22),
-            decoration: BoxDecoration(
-              image: DecorationImage(
-                fit: BoxFit.cover,
-                image: NetworkImage(imageURL),
-              ),
-              color: Colors.pink,
-              borderRadius: BorderRadius.all(Radius.circular(20)),
+          margin: byme ? EdgeInsets.only(right: 22) : EdgeInsets.only(left: 22),
+          decoration: BoxDecoration(
+            image: DecorationImage(
+              fit: BoxFit.cover,
+              image: NetworkImage(imageURL),
             ),
-            width: 200,
-            height: 170,
+            color: Colors.pink,
+            borderRadius: BorderRadius.all(Radius.circular(20)),
           ),
+          width: 200,
+          height: 170,
         ),
       ),
     );

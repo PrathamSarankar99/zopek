@@ -106,9 +106,8 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   void onTapSearchUsersListTile(int index) {
-    String chatRoomID = utils.getChatRoomID(
-        snap.docs[index].get("UserName"), Constants.userName);
-    List<String> users = [snap.docs[index].get("UserName"), Constants.userName];
+    String chatRoomID = utils.getChatRoomID(snap.docs[index].id, Constants.uid);
+    List<String> users = [snap.docs[index].id, Constants.uid];
     users.sort();
     DataBaseServices().createChatRoom(
         chatRoomID, utils.mapForChatRoom(users, Timestamp.now()));

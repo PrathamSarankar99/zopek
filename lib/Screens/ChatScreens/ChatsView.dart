@@ -14,6 +14,7 @@ import 'dart:math' as math;
 import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:zopek/Widgets/ChatScreenWidgets/ImageMessage.dart';
+import 'package:zopek/Widgets/ChatScreenWidgets/TextMessage.dart';
 
 class Chats extends StatefulWidget {
   final String chatRoomID;
@@ -78,7 +79,7 @@ class _ChatsState extends State<Chats> {
               color: Colors.black.withBlue(40),
               child: StreamBuilder<QuerySnapshot>(
                   stream: dbs.getChatRoomStreamOfMessagesExHidden(
-                      widget.chatRoomID, Constants.userName),
+                      widget.chatRoomID, Constants.uid),
                   builder: (context, chatRoomSnapshot) {
                     return SafeArea(
                         child: isSelected.contains(true)
@@ -97,22 +98,23 @@ class _ChatsState extends State<Chats> {
                 width: MediaQuery.of(context).size.width,
                 child: StreamBuilder<QuerySnapshot>(
                     stream: dbs.getChatRoomStreamOfMessagesExHidden(
-                        widget.chatRoomID, Constants.userName),
+                        widget.chatRoomID, Constants.uid),
                     builder: (context, chatRoomSnapshot) {
                       if (!chatRoomSnapshot.hasData) {
                         return Container();
                       }
 
-                      return ListView.builder(
+                      return ListView.separated(
                           shrinkWrap: true,
                           reverse: true,
                           controller: _autoScrollController,
                           physics: ClampingScrollPhysics(),
                           padding: EdgeInsets.only(top: 5, bottom: 0),
                           itemCount: chatRoomSnapshot.data.docs.length,
+                          separatorBuilder: (context, index) {
+                            return Container();
+                          },
                           itemBuilder: (context, index) {
-                            if (isSelected.isEmpty ||
-                                isSelected.length <= index) {}
                             print("Getting message $index");
                             return messageTile(index, chatRoomSnapshot);
                           });
@@ -319,7 +321,7 @@ class _ChatsState extends State<Chats> {
                                 onPressed: () {
                                   if (messageController.text != "") {
                                     messageController.clear();
-                                    sendMessage(null);
+                                    sendMessage('');
                                   }
                                 },
                                 child: Padding(
@@ -351,6 +353,7 @@ class _ChatsState extends State<Chats> {
           : [
               _queryDocumentSnapshot.get("Sender"),
               _queryDocumentSnapshot.get("Message"),
+              _queryDocumentSnapshot.get("ImageURL"),
             ];
       _queryDocumentSnapshot = null;
       FirebaseFirestore.instance
@@ -367,11 +370,8 @@ class _ChatsState extends State<Chats> {
           "Visible": visible,
           "RepliedTo": repliedTo,
         };
+        print('ChatRoomID is : ${widget.chatRoomID}');
         await dbs.sendMessage(widget.chatRoomID, map);
-        _autoScrollController.animateTo(
-            _autoScrollController.position.minScrollExtent,
-            duration: Duration(milliseconds: 150),
-            curve: Curves.easeInOut);
         Message.message = "";
       });
     });
@@ -429,8 +429,9 @@ class _ChatsState extends State<Chats> {
     String message = chatRoomSnapshot.data.docs[index].get("Message");
     Timestamp timestamp = chatRoomSnapshot.data.docs[index].get("Time");
     List repliedTo = chatRoomSnapshot.data.docs[index].get("RepliedTo");
-    String repliedToSender = repliedTo.length == 2 ? repliedTo[0] : "";
-    String repliedToMessage = repliedTo.length == 2 ? repliedTo[1] : "";
+    String repliedToSender = repliedTo.length == 3 ? repliedTo[0] : "";
+    String repliedToMessage = repliedTo.length == 3 ? repliedTo[1] : "";
+    String repliedToImageURL = repliedTo.length == 3 ? repliedTo[2] : "";
     if (isSelected.isEmpty || isSelected.length <= index) {
       return Container(
         width: MediaQuery.of(context).size.width,
@@ -443,219 +444,89 @@ class _ChatsState extends State<Chats> {
       controller: _autoScrollController,
       index: index,
       child: GestureDetector(
-        onDoubleTap: () {
-          print("Double tapped on index $index");
-        },
-        onTap: () {
-          setState(() {
-            if (isSelected.contains(true)) {
-              isSelected[index] = !isSelected[index];
-              return;
-            }
-          });
-        },
-        onLongPress: () {
-          setState(() {
-            if (isSelected.contains(false)) {
-              isSelected[index] = !isSelected[index];
-            }
-          });
-        },
-        child: SwipeTo(
-          offsetDx: 0.2,
-          onRightSwipe: () {
+          onDoubleTap: () {
+            print("Double tapped on index $index");
+          },
+          onTap: () {
             setState(() {
-              messageFocusNode.requestFocus();
-              _queryDocumentSnapshot = chatRoomSnapshot.data.docs[index];
+              if (isSelected.contains(true)) {
+                isSelected[isSelected.length - 1 - index] =
+                    !isSelected[isSelected.length - 1 - index];
+                print(isSelected);
+                return;
+              }
+              Navigator.push(
+                  context,
+                  PageTransition(
+                      child: Scaffold(
+                        appBar: AppBar(
+                          title: Text(username),
+                          actions: [
+                            Padding(
+                              padding: EdgeInsets.fromLTRB(0, 0, 15, 0),
+                              child: Icon(Icons.star_border),
+                            ),
+                            Padding(
+                              padding: EdgeInsets.fromLTRB(0, 0, 15, 0),
+                              child: Icon(Icons.forward),
+                            ),
+                            Padding(
+                              padding: EdgeInsets.fromLTRB(0, 0, 15, 0),
+                              child: Icon(Icons.more_vert),
+                            ),
+                          ],
+                          brightness: Brightness.dark,
+                          backgroundColor: Colors.black.withBlue(40),
+                        ),
+                        body: PhotoView(
+                            backgroundDecoration: BoxDecoration(
+                              color: Colors.black.withBlue(40),
+                            ),
+                            heroAttributes:
+                                PhotoViewHeroAttributes(tag: imageURL),
+                            imageProvider: NetworkImage(imageURL)),
+                      ),
+                      type: PageTransitionType.fade));
             });
           },
-          child: imageURL != null
-              ? ImageMessage(
-                  byme: byme,
-                  imageURL: imageURL,
-                  isSelected: isSelected[index],
-                  username: username,
-                )
-              : Container(
-                  margin: EdgeInsets.only(bottom: 1),
-                  decoration: BoxDecoration(
-                    color: isSelected[index]
-                        ? (!byme
-                            ? Colors.amber.shade300.withOpacity(0.5)
-                            : Color.fromRGBO(23, 105, 164, 0.5))
-                        : Colors.transparent,
-                    borderRadius: index == isSelected.length - 1
-                        ? BorderRadius.only(
-                            topLeft: Radius.circular(25),
-                            topRight: Radius.circular(25),
-                          )
-                        : BorderRadius.zero,
-                  ),
-                  child: Container(
-                      padding: EdgeInsets.only(top: 3, bottom: 3),
-                      color: Colors.transparent,
-                      margin: byme
-                          ? EdgeInsets.only(
-                              left: MediaQuery.of(context).size.width * 0.20,
-                              right: 22,
-                            )
-                          : EdgeInsets.only(
-                              right: MediaQuery.of(context).size.width * 0.20,
-                              left: 22,
-                            ),
-                      alignment:
-                          byme ? Alignment.centerRight : Alignment.centerLeft,
-                      child: Column(
-                        crossAxisAlignment: byme
-                            ? CrossAxisAlignment.end
-                            : CrossAxisAlignment.start,
-                        children: [
-                          Visibility(
-                            visible: repliedToSender != "",
-                            child: Container(
-                              margin: EdgeInsets.only(top: 10),
-                              color: Colors.transparent,
-                              child: Text(repliedToSender == Constants.userName
-                                  ? (byme
-                                      ? "Replied to yourself"
-                                      : "Replied to you")
-                                  : (byme
-                                      ? "You replied"
-                                      : "Replied to themself")),
-                            ),
-                          ),
-                          GestureDetector(
-                            onTap: () {
-                              _scrollToIndex(repliedToMessage);
-                            },
-                            child: Visibility(
-                              visible: repliedToMessage != "",
-                              child: Container(
-                                padding: byme
-                                    ? EdgeInsets.only(right: 10)
-                                    : EdgeInsets.only(left: 10),
-                                decoration: BoxDecoration(
-                                  border: byme
-                                      ? Border(
-                                          right: BorderSide(
-                                          color: (repliedToSender !=
-                                                  Constants.userName
-                                              ? Colors.amber.shade300
-                                                  .withOpacity(0.8)
-                                              : Color.fromRGBO(
-                                                  23, 105, 164, 0.8)),
-                                          width: 2,
-                                        ))
-                                      : Border(
-                                          left: BorderSide(
-                                          color: (repliedToSender !=
-                                                  Constants.userName
-                                              ? Colors.amber.shade300
-                                                  .withOpacity(0.8)
-                                              : Color.fromRGBO(
-                                                  23, 105, 164, 0.8)),
-                                          width: 2,
-                                        )),
-                                  color: Colors.transparent,
-                                ),
-                                child: Container(
-                                    padding: EdgeInsets.all(10),
-                                    decoration: BoxDecoration(
-                                      color: byme
-                                          //rgb(255,72,56)
-                                          ? (repliedToSender !=
-                                                  Constants.userName
-                                              ? Colors.amber.shade300
-                                                  .withOpacity(0.8)
-                                              : Color.fromRGBO(
-                                                  23, 105, 164, 0.8))
-                                          : (repliedToSender ==
-                                                  Constants.userName
-                                              ? Color.fromRGBO(
-                                                  23, 105, 164, 0.8)
-                                              : Colors.amber.shade300
-                                                  .withOpacity(0.6)),
-                                      borderRadius:
-                                          BorderRadius.all(Radius.circular(30)),
-                                    ),
-                                    child: Text(
-                                      repliedToMessage,
-                                      style: TextStyle(
-                                        color: Colors.black.withOpacity(0.6),
-                                      ),
-                                    )),
-                              ),
-                            ),
-                          ),
-                          SizedBox(
-                            height: 3,
-                          ),
-                          Container(
-                            decoration: BoxDecoration(
-                                borderRadius: byme
-                                    ? BorderRadius.only(
-                                        topLeft: Radius.circular(25),
-                                        topRight: Radius.circular(25),
-                                        bottomLeft: Radius.circular(25),
-                                      )
-                                    : BorderRadius.only(
-                                        topLeft: Radius.circular(25),
-                                        topRight: Radius.circular(25),
-                                        bottomRight: Radius.circular(25),
-                                      ),
-                                color: byme
-                                    ? Color.fromRGBO(23, 105, 164, 1)
-                                    : Colors.amber.shade300),
-
-                            padding: EdgeInsets.only(
-                                top: 15, left: 15, bottom: 5, right: 5),
-                            //rgb(216,242,255)
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              crossAxisAlignment: byme
-                                  ? CrossAxisAlignment.end
-                                  : CrossAxisAlignment.start,
-                              children: [
-                                Container(
-                                  padding: byme
-                                      ? EdgeInsets.only(right: 10)
-                                      : EdgeInsets.only(right: 10),
-                                  child: Linkable(
-                                    linkColor: Colors.white,
-                                    textColor: Colors.black.withOpacity(0.8),
-                                    text: message,
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      decorationColor: Colors.blue,
-                                    ),
-                                  ),
-                                ),
-                                SizedBox(
-                                  height: 5,
-                                ),
-                                Container(
-                                  alignment: byme
-                                      ? Alignment.bottomRight
-                                      : Alignment.bottomLeft,
-                                  height: 12,
-                                  width: 40,
-                                  color: Colors.transparent,
-                                  child: Text(
-                                    getTimeForMessageTile(timestamp),
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                )
-                              ],
-                            ),
-                          ),
-                        ],
-                      )),
-                ),
-        ),
-      ),
+          onLongPress: () {
+            setState(() {
+              if (isSelected.contains(false)) {
+                isSelected[isSelected.length - 1 - index] =
+                    !isSelected[isSelected.length - 1 - index];
+                print(isSelected);
+              }
+            });
+          },
+          child: SwipeTo(
+            offsetDx: 0.2,
+            onRightSwipe: () {
+              setState(() {
+                messageFocusNode.requestFocus();
+                _queryDocumentSnapshot = chatRoomSnapshot.data.docs[index];
+              });
+            },
+            child: message == ''
+                ? ImageMessage(
+                    byme: byme,
+                    imageURL: imageURL,
+                    username: username,
+                    isSelected: isSelected[isSelected.length - 1 - index],
+                  )
+                : TextMessage(
+                    byme: byme,
+                    index: index,
+                    isSelected: isSelected[isSelected.length - 1 - index],
+                    message: message,
+                    messagesLength: isSelected.length,
+                    repliedToMessage: repliedToMessage,
+                    repliedToSender: repliedToSender,
+                    repliedToImageURL: repliedToImageURL,
+                    timestamp: timestamp,
+                    scrollToIndex: () {
+                      _scrollToIndex(repliedToMessage, repliedToImageURL);
+                    }),
+          )),
     );
     //rgb(216,242,255)
   }
@@ -672,11 +543,10 @@ class _ChatsState extends State<Chats> {
       String downloadURL = await reference.getDownloadURL();
       sendMessage(downloadURL);
     });
-
-    //sendMessage(downloadURL);
   }
 
-  Future _scrollToIndex(String repliedToMessage) async {
+  Future _scrollToIndex(
+      String repliedToMessage, String repliedToImageURL) async {
     print("Replied to message is $repliedToMessage");
     QuerySnapshot snapshot = await FirebaseFirestore.instance
         .collection("ChatRooms")
@@ -685,8 +555,11 @@ class _ChatsState extends State<Chats> {
         .orderBy("Time")
         .get();
 
-    int index = snapshot.docs
-        .indexWhere((element) => element.get("Message") == repliedToMessage);
+    int index = repliedToImageURL != null
+        ? snapshot.docs.indexWhere(
+            (element) => element.get("ImageURL") == repliedToImageURL)
+        : snapshot.docs.indexWhere(
+            (element) => element.get("Message") == repliedToMessage);
 
     print("$index is the index of the message.");
 
@@ -742,10 +615,11 @@ class _ChatsState extends State<Chats> {
                           setState(() {
                             for (int i = 0; i < isSelected.length; i++) {
                               if (isSelected[i]) {
-                                chatRoomSnapshot.data.docs[i].reference
+                                chatRoomSnapshot.data
+                                    .docs[isSelected.length - 1 - i].reference
                                     .delete()
                                     .then((value) => print(
-                                        "Message deletion successful at index $i"));
+                                        "Message deletion successful at index ${isSelected.length - 1 - i}}"));
                               }
                             }
                             isSelected.removeWhere((element) => element);
@@ -943,12 +817,5 @@ class _ChatsState extends State<Chats> {
         popupMenuButton(chatRoomSnapshot),
       ],
     );
-  }
-
-  String getTimeForMessageTile(Timestamp timeStamp) {
-    DateTime time = timeStamp.toDate();
-    String formatted =
-        "${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}";
-    return formatted;
   }
 }

@@ -8,6 +8,8 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
   runApp(App());
+  //TODO : ImageLoading and sending progress.
+  //TODO : Notifications.
 }
 
 class App extends StatelessWidget {
