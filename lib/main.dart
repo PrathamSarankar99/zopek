@@ -10,6 +10,7 @@ void main() async {
   runApp(App());
   //TODO : ImageLoading and sending progress.
   //TODO : Notifications.
+  //
 }
 
 class App extends StatelessWidget {
