@@ -555,7 +555,7 @@ class _ChatsState extends State<Chats> {
         .orderBy("Time")
         .get();
 
-    int index = repliedToImageURL != null
+    int index = repliedToImageURL != ''
         ? snapshot.docs.indexWhere(
             (element) => element.get("ImageURL") == repliedToImageURL)
         : snapshot.docs.indexWhere(
