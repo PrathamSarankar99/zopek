@@ -121,20 +121,35 @@ class _TextMessageState extends State<TextMessage> {
                                     : Colors.amber.shade300.withOpacity(0.6)),
                             borderRadius: widget.repliedToImageURL == ""
                                 ? BorderRadius.all(Radius.circular(30))
-                                : BorderRadius.all(Radius.circular(10)),
+                                : BorderRadius.all(Radius.circular(15)),
                           ),
                           child: widget.repliedToImageURL != ""
-                              ? Container(
-                                  height: 50,
-                                  width: 50,
-                                  child: ClipRRect(
-                                    borderRadius:
-                                        BorderRadius.all(Radius.circular(10)),
-                                    child: Image.network(
-                                      widget.repliedToImageURL,
-                                      fit: BoxFit.cover,
+                              ? Stack(
+                                  alignment: Alignment.center,
+                                  children: [
+                                    Container(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                                Colors.white),
+                                        strokeWidth: 1.5,
+                                      ),
                                     ),
-                                  ),
+                                    Container(
+                                      height: 60,
+                                      width: 70,
+                                      child: ClipRRect(
+                                        borderRadius: BorderRadius.all(
+                                            Radius.circular(15)),
+                                        child: Image.network(
+                                          widget.repliedToImageURL,
+                                          fit: BoxFit.cover,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 )
                               : Text(
                                   widget.repliedToMessage,

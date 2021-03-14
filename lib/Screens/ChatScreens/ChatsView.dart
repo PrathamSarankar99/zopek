@@ -1,18 +1,16 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:linkable/linkable.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
 import 'package:photo_view/photo_view.dart';
-import 'package:path/path.dart' as Path;
 import 'package:swipe_to/swipe_to.dart';
 import 'package:zopek/Screens/HomeScreens/Homepage.dart';
 import 'package:zopek/Services/Constants.dart';
 import 'package:zopek/Services/database.dart';
 import 'dart:math' as math;
-import 'dart:io';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:zopek/Widgets/ChatScreenWidgets/ImageMessage.dart';
 import 'package:zopek/Widgets/ChatScreenWidgets/TextMessage.dart';
 
@@ -342,7 +340,7 @@ class _ChatsState extends State<Chats> {
     );
   }
 
-  sendMessage(String imageURL) {
+  sendMessage(String filePath) {
     setState(() {
       DataBaseServices dbs = new DataBaseServices();
       Map<String, dynamic> map;
@@ -363,7 +361,9 @@ class _ChatsState extends State<Chats> {
           .then((docSnapshot) async {
         visible = docSnapshot.get("Users");
         map = {
-          "ImageURL": imageURL,
+          "ImageURL": '',
+          "FilePath1": filePath,
+          "FilePath2": '',
           "Time": DateTime.now(),
           "Sender": Constants.userName,
           "Message": Message.message.trim(),
@@ -373,21 +373,6 @@ class _ChatsState extends State<Chats> {
         print('ChatRoomID is : ${widget.chatRoomID}');
         await dbs.sendMessage(widget.chatRoomID, map);
         Message.message = "";
-      });
-    });
-  }
-
-  updatingMessageMap() async {
-    QuerySnapshot chatRoomsnapshot =
-        await FirebaseFirestore.instance.collection("ChatRooms").get();
-
-    chatRoomsnapshot.docs.forEach((element) async {
-      QuerySnapshot tmpSnapshot =
-          await element.reference.collection("Messages").get();
-      tmpSnapshot.docs.forEach((tmpelement) async {
-        tmpelement.reference.update({
-          "ImageURL": null,
-        });
       });
     });
   }
@@ -426,8 +411,11 @@ class _ChatsState extends State<Chats> {
     String imageURL = chatRoomSnapshot.data.docs[index].get("ImageURL");
     bool byme =
         chatRoomSnapshot.data.docs[index].get("Sender") == Constants.userName;
+
     String message = chatRoomSnapshot.data.docs[index].get("Message");
     Timestamp timestamp = chatRoomSnapshot.data.docs[index].get("Time");
+    String filepath1 = chatRoomSnapshot.data.docs[index].get("FilePath1");
+    String filepath2 = chatRoomSnapshot.data.docs[index].get("FilePath2");
     List repliedTo = chatRoomSnapshot.data.docs[index].get("RepliedTo");
     String repliedToSender = repliedTo.length == 3 ? repliedTo[0] : "";
     String repliedToMessage = repliedTo.length == 3 ? repliedTo[1] : "";
@@ -484,7 +472,11 @@ class _ChatsState extends State<Chats> {
                             ),
                             heroAttributes:
                                 PhotoViewHeroAttributes(tag: imageURL),
-                            imageProvider: NetworkImage(imageURL)),
+                            imageProvider: byme
+                                ? FileImage(File(filepath1))
+                                : (filepath2 != ''
+                                    ? FileImage(File(filepath2))
+                                    : NetworkImage(imageURL))),
                       ),
                       type: PageTransitionType.fade));
             });
@@ -508,10 +500,12 @@ class _ChatsState extends State<Chats> {
             },
             child: message == ''
                 ? ImageMessage(
-                    byme: byme,
-                    imageURL: imageURL,
-                    username: username,
+                    snapshot: chatRoomSnapshot.data.docs[index],
+                    chatRoomID: widget.chatRoomID,
                     isSelected: isSelected[isSelected.length - 1 - index],
+                    ontap: () {
+                      _scrollToIndex(repliedToMessage, repliedToImageURL);
+                    },
                   )
                 : TextMessage(
                     byme: byme,
@@ -536,13 +530,15 @@ class _ChatsState extends State<Chats> {
     PickedFile imageFile = await imagePicker.getImage(
       source: ImageSource.camera,
     );
-    Reference reference = FirebaseStorage.instance.ref().child(
-        "${widget.chatRoomID}/${Constants.userName}/images/${Path.basename(imageFile.path)}");
-    UploadTask uploadTask = reference.putFile(File(imageFile.path));
-    TaskSnapshot taskSnapshot = await uploadTask.whenComplete(() async {
-      String downloadURL = await reference.getDownloadURL();
-      sendMessage(downloadURL);
-    });
+    sendMessage(imageFile.path);
+
+    // Reference reference = FirebaseStorage.instance.ref().child(
+    //     "${widget.chatRoomID}/${Constants.userName}/images/${Path.basename(imageFile.path)}");
+    // UploadTask uploadTask = reference.putFile(File(imageFile.path));
+    // uploadTask.snapshotEvents.listen((event) {});
+    // TaskSnapshot taskSnapshot = await uploadTask.whenComplete(() async {
+    //   String downloadURL = await reference.getDownloadURL();
+    // });
   }
 
   Future _scrollToIndex(
