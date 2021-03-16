@@ -2,11 +2,13 @@ import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:swipe_to/swipe_to.dart';
+import 'package:zopek/Screens/ChatScreens/PasswordView.dart';
 import 'package:zopek/Screens/HomeScreens/Homepage.dart';
 import 'package:zopek/Services/Constants.dart';
 import 'package:zopek/Services/database.dart';
@@ -17,8 +19,9 @@ import 'package:zopek/Widgets/ChatScreenWidgets/TextMessage.dart';
 class Chats extends StatefulWidget {
   final String chatRoomID;
   final String uid;
-
-  const Chats({Key key, this.chatRoomID, this.uid}) : super(key: key);
+  final bool incognito;
+  const Chats({Key key, this.chatRoomID, this.uid, @required this.incognito})
+      : super(key: key);
   @override
   _ChatsState createState() => _ChatsState();
 }
@@ -38,9 +41,11 @@ class _ChatsState extends State<Chats> {
   DataBaseServices dbs = new DataBaseServices();
   AutoScrollController _autoScrollController = new AutoScrollController();
   QueryDocumentSnapshot _queryDocumentSnapshot;
+  bool isInconito = false;
   @override
   void initState() {
     super.initState();
+    isInconito = widget.incognito;
     populateSelection().then((value) {
       setState(() {
         //print("$value has been returned");
@@ -58,9 +63,16 @@ class _ChatsState extends State<Chats> {
   }
 
   @override
+  void setState(fn) {
+    if (this.mounted) {
+      super.setState(fn);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     print("Chat page is building");
-
+    print("Are you incognito? $isInconito");
     return Scaffold(
       backgroundColor: Colors.black.withBlue(40),
       body: WillPopScope(
@@ -76,8 +88,14 @@ class _ChatsState extends State<Chats> {
               width: MediaQuery.of(context).size.width,
               color: Colors.black.withBlue(40),
               child: StreamBuilder<QuerySnapshot>(
-                  stream: dbs.getChatRoomStreamOfMessagesExHidden(
-                      widget.chatRoomID, Constants.uid),
+                  stream: isInconito == null
+                      ? dbs.getChatRoomStreamOfMessagesExHidden(
+                          widget.chatRoomID, Constants.uid)
+                      : (isInconito
+                          ? dbs.getChatRoomStreamOfMessages(
+                              widget.chatRoomID, Constants.uid)
+                          : dbs.getChatRoomStreamOfMessagesExHidden(
+                              widget.chatRoomID, Constants.uid)),
                   builder: (context, chatRoomSnapshot) {
                     return SafeArea(
                         child: isSelected.contains(true)
@@ -95,8 +113,14 @@ class _ChatsState extends State<Chats> {
                     )),
                 width: MediaQuery.of(context).size.width,
                 child: StreamBuilder<QuerySnapshot>(
-                    stream: dbs.getChatRoomStreamOfMessagesExHidden(
-                        widget.chatRoomID, Constants.uid),
+                    stream: isInconito == null
+                        ? dbs.getChatRoomStreamOfMessagesExHidden(
+                            widget.chatRoomID, Constants.uid)
+                        : (isInconito
+                            ? dbs.getChatRoomStreamOfMessages(
+                                widget.chatRoomID, Constants.uid)
+                            : dbs.getChatRoomStreamOfMessagesExHidden(
+                                widget.chatRoomID, Constants.uid)),
                     builder: (context, chatRoomSnapshot) {
                       if (!chatRoomSnapshot.hasData) {
                         return Container();
@@ -276,8 +300,8 @@ class _ChatsState extends State<Chats> {
                           Container(
                             alignment: Alignment.center,
                             padding: EdgeInsets.only(bottom: 2),
-                            margin: EdgeInsets.only(left: 55),
-                            width: MediaQuery.of(context).size.width * 0.7 - 50,
+                            margin: EdgeInsets.only(left: 60),
+                            width: MediaQuery.of(context).size.width * 0.68,
                             child: TextField(
                               onChanged: (str) {
                                 Message.message = str;
@@ -287,7 +311,6 @@ class _ChatsState extends State<Chats> {
                               },
                               autocorrect: true,
                               focusNode: messageFocusNode,
-                              enableSuggestions: true,
                               minLines: 1,
                               maxLines: 5,
                               controller: messageController,
@@ -298,20 +321,7 @@ class _ChatsState extends State<Chats> {
                             ),
                           ),
                           Positioned(
-                            right: 30,
-                            bottom: 0,
-                            child: FlatButton(
-                              shape: CircleBorder(),
-                              onPressed: () {},
-                              height: 50,
-                              child: Transform.rotate(
-                                angle: math.pi * 2 + 100,
-                                child: Icon(Icons.attach_file),
-                              ),
-                            ),
-                          ),
-                          Positioned(
-                            right: -15,
+                            right: -20,
                             bottom: 0,
                             child: FlatButton(
                                 height: 50,
@@ -323,8 +333,13 @@ class _ChatsState extends State<Chats> {
                                   }
                                 },
                                 child: Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: Icon(Icons.send),
+                                  padding: const EdgeInsets.only(
+                                    bottom: 8.0,
+                                  ),
+                                  child: Transform.rotate(
+                                      angle: math.pi / 0.55,
+                                      child: Icon(Icons.send,
+                                          color: Colors.black.withBlue(60))),
                                 )),
                           ),
                         ],
@@ -420,6 +435,9 @@ class _ChatsState extends State<Chats> {
     String repliedToSender = repliedTo.length == 3 ? repliedTo[0] : "";
     String repliedToMessage = repliedTo.length == 3 ? repliedTo[1] : "";
     String repliedToImageURL = repliedTo.length == 3 ? repliedTo[2] : "";
+    bool hidden = !chatRoomSnapshot.data.docs[index]
+        .get("Visible")
+        .contains(Constants.uid);
     if (isSelected.isEmpty || isSelected.length <= index) {
       return Container(
         width: MediaQuery.of(context).size.width,
@@ -509,6 +527,7 @@ class _ChatsState extends State<Chats> {
                   )
                 : TextMessage(
                     byme: byme,
+                    hidden: hidden,
                     index: index,
                     isSelected: isSelected[isSelected.length - 1 - index],
                     message: message,
@@ -666,12 +685,30 @@ class _ChatsState extends State<Chats> {
     return PopupMenuButton(
         onSelected: (code) async {
           setState(() {
+            if (code == 'incognito') {
+              dbs.getPassword(Constants.uid).then((password) {
+                Navigator.push(
+                        context,
+                        PageTransition(
+                            child: PasswordView(
+                              password: password,
+                            ),
+                            type: PageTransitionType.fade))
+                    .then((value) {
+                  setState(() {
+                    print("The value is : $value");
+                    isInconito = value;
+                  });
+                });
+              });
+            }
             if (code == 'hide') {
               for (int i = 0; i < isSelected.length; i++) {
-                if (isSelected[i]) {
-                  List visible = chatRoomSnapshot.data.docs[i].get("Visible");
-                  visible.removeWhere(
-                      (element) => (element == Constants.userName));
+                if (isSelected[isSelected.length - i - 1]) {
+                  List visible = chatRoomSnapshot
+                      .data.docs[isSelected.length - i - 1]
+                      .get("Visible");
+                  visible.removeWhere((element) => (element == Constants.uid));
                   chatRoomSnapshot.data.docs[i].reference.update({
                     "Visible": visible,
                   }).then((value) {
@@ -756,6 +793,18 @@ class _ChatsState extends State<Chats> {
                     Text("Hide"),
                   ],
                 )),
+            PopupMenuItem(
+                value: 'incognito',
+                height: 35,
+                child: Row(
+                  children: [
+                    SvgPicture.asset('assets/incognito.svg'),
+                    SizedBox(
+                      width: 5,
+                    ),
+                    Text('Incognito')
+                  ],
+                ))
           ];
         });
   }

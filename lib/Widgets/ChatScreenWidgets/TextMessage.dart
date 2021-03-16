@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkable/linkable.dart';
 import 'package:zopek/Services/Constants.dart';
 
@@ -13,6 +14,7 @@ class TextMessage extends StatefulWidget {
   final String repliedToImageURL;
   final String message;
   final VoidCallback scrollToIndex;
+  final bool hidden;
   final Timestamp timestamp;
   const TextMessage(
       {Key key,
@@ -25,7 +27,8 @@ class TextMessage extends StatefulWidget {
       this.messagesLength,
       this.index,
       this.repliedToSender,
-      this.repliedToImageURL})
+      this.repliedToImageURL,
+      this.hidden})
       : super(key: key);
 
   @override
@@ -209,15 +212,31 @@ class _TextMessageState extends State<TextMessage> {
                       alignment: widget.byme
                           ? Alignment.bottomRight
                           : Alignment.bottomLeft,
-                      height: 12,
-                      width: 40,
+                      height: 15,
+                      width: 55,
                       color: Colors.transparent,
-                      child: Text(
-                        getTimeForMessageTile(widget.timestamp),
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.white,
-                        ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Visibility(
+                            visible: widget.hidden,
+                            child: Container(
+                                height: 15,
+                                width: 15,
+                                child: Image.asset(
+                                  'assets/hidden.png',
+                                  fit: BoxFit.fill,
+                                )),
+                          ),
+                          Text(
+                            getTimeForMessageTile(widget.timestamp),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
                       ),
                     )
                   ],

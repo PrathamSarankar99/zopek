@@ -114,7 +114,10 @@ class _SearchScreenState extends State<SearchScreen> {
     Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-            builder: (context) =>
-                Chats(uid: snap.docs[index].id, chatRoomID: chatRoomID)));
+            builder: (context) => Chats(
+                  uid: snap.docs[index].id,
+                  chatRoomID: chatRoomID,
+                  incognito: false,
+                )));
   }
 }

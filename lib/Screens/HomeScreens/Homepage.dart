@@ -26,6 +26,14 @@ class _HomepageState extends State<Homepage> {
   final double minHeight = 0.63;
 
   @override
+  void setState(fn) {
+    // TODO: implement setState
+    if (this.mounted) {
+      super.setState(fn);
+    }
+  }
+
+  @override
   void initState() {
     super.initState();
     populateSelection();
@@ -698,6 +706,7 @@ class _HomepageState extends State<Homepage> {
                     context,
                     PageTransition(
                         child: Chats(
+                          incognito: false,
                           chatRoomID: utils.getChatRoomID(
                               Constants.uid, userSnapshot.data.id),
                           uid: userSnapshot.data.id,

@@ -31,6 +31,21 @@ class DataBaseServices {
         .set(chatRoomMap);
   }
 
+  Future<bool> setPassword(String password, String uid) async {
+    DocumentSnapshot documentSnapshot =
+        await FirebaseFirestore.instance.collection('Users').doc(uid).get();
+    documentSnapshot.reference.update({"Password": password}).catchError((e) {
+      return false;
+    });
+    return true;
+  }
+
+  Future<String> getPassword(String uid) async {
+    DocumentSnapshot documentSnapshot =
+        await FirebaseFirestore.instance.collection('Users').doc(uid).get();
+    return documentSnapshot.get("Password");
+  }
+
   updateUserPhoneNo(String newPhoneNumber) async {
     String uid = await Helper.getUserID();
     DocumentSnapshot snapshot =
@@ -47,6 +62,16 @@ class DataBaseServices {
         .doc(chatRoomID)
         .collection("Messages")
         .where("Visible", arrayContains: username)
+        .orderBy("Time", descending: true)
+        .snapshots();
+  }
+
+  Stream<QuerySnapshot> getChatRoomStreamOfMessages(
+      String chatRoomID, String username) {
+    return FirebaseFirestore.instance
+        .collection("ChatRooms")
+        .doc(chatRoomID)
+        .collection("Messages")
         .orderBy("Time", descending: true)
         .snapshots();
   }

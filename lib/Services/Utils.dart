@@ -16,6 +16,7 @@ class Utils {
       "PhotoURL": photoURL,
       "PhoneNo": phoneNo,
       "SearchKeywords": searchKeywords,
+      "Password": '',
     };
   }
 
@@ -66,6 +67,7 @@ class Utils {
     return {
       "Users": users,
       "LastMessageTime": timestamp,
+      "Password": '',
     };
   }
 }
