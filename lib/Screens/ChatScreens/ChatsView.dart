@@ -685,16 +685,39 @@ class _ChatsState extends State<Chats> {
     return PopupMenuButton(
         onSelected: (code) async {
           setState(() {
+            if (code == 'unhide') {
+              for (int i = 0; i < isSelected.length; i++) {
+                if (isSelected[isSelected.length - i - 1]) {
+                  List visible = chatRoomSnapshot
+                      .data.docs[isSelected.length - i - 1]
+                      .get("Visible");
+                  if (!visible.contains(Constants.uid)) {
+                    visible.add(Constants.uid);
+                  }
+                  chatRoomSnapshot.data.docs[i].reference.update({
+                    "Visible": visible,
+                  }).then((value) {
+                    print("A message at index $i is hidden successfully.");
+                  });
+                }
+              }
+              isSelected.removeWhere((element) => element);
+
+              print(isSelected.toString());
+            }
             if (code == 'incognito') {
+              // Navigator.push(
+              //     context,
+              //     MaterialPageRoute(
+              //       builder: (context) => PasswordView(),
+              //     ));
               dbs.getPassword(Constants.uid).then((password) {
                 Navigator.push(
-                        context,
-                        PageTransition(
-                            child: PasswordView(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => PasswordView(
                               password: password,
-                            ),
-                            type: PageTransitionType.fade))
-                    .then((value) {
+                            ))).then((value) {
                   setState(() {
                     print("The value is : $value");
                     isInconito = value;
@@ -740,7 +763,7 @@ class _ChatsState extends State<Chats> {
           ),
         ),
         itemBuilder: (context) {
-          return [
+          var menuitems = [
             PopupMenuItem(
               height: 35,
               textStyle: TextStyle(
@@ -806,6 +829,29 @@ class _ChatsState extends State<Chats> {
                   ],
                 ))
           ];
+          if (isInconito) {
+            menuitems.insert(
+              2,
+              PopupMenuItem(
+                  value: 'unhide',
+                  textStyle: TextStyle(
+                    fontSize: 15,
+                    color: Colors.black,
+                  ),
+                  enabled: !(getSelectedno() == 0),
+                  height: 35,
+                  child: Row(
+                    children: [
+                      Icon(Icons.remove_red_eye, color: Colors.blue),
+                      SizedBox(
+                        width: 5,
+                      ),
+                      Text("Unhide"),
+                    ],
+                  )),
+            );
+          }
+          return menuitems;
         });
   }
 

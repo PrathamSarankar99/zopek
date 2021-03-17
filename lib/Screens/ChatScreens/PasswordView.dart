@@ -1,7 +1,11 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:page_transition/page_transition.dart';
+import 'package:zopek/Screens/AuthScreens/Signin.dart';
 import 'package:zopek/Services/Constants.dart';
+import 'package:zopek/Services/Helper.dart';
 import 'package:zopek/Services/database.dart';
 
 class PasswordView extends StatefulWidget {
@@ -14,7 +18,7 @@ class PasswordView extends StatefulWidget {
 
 class _PasswordViewState extends State<PasswordView> {
   var selectedindex = 0;
-  String code = '';
+  String code = ' ';
   DataBaseServices dataBaseServices = new DataBaseServices();
   String alert = '';
   @override
@@ -113,6 +117,7 @@ class _PasswordViewState extends State<PasswordView> {
                           children: [
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
+                              mainAxisSize: MainAxisSize.max,
                               children: [
                                 DigitHolder(
                                   width: width,
@@ -149,6 +154,58 @@ class _PasswordViewState extends State<PasswordView> {
                                     fontWeight: FontWeight.w900,
                                   )),
                             ),
+                            Container(
+                              margin: EdgeInsets.only(right: 20),
+                              width: MediaQuery.of(context).size.width,
+                              alignment: Alignment.centerRight,
+                              child: InkWell(
+                                  onTap: () {
+                                    showDialog(
+                                        context: context,
+                                        builder: (context) {
+                                          return AlertDialog(
+                                            title: Text('Alert'),
+                                            content: Text(
+                                                "Your pin will be reset and you will be logged out."),
+                                            actions: [
+                                              FlatButton.icon(
+                                                  onPressed: () async {
+                                                    setState(() {
+                                                      dataBaseServices
+                                                          .setPassword(
+                                                              '', Constants.uid)
+                                                          .then((value1) {
+                                                        Helper.saveUserLoggedInSP(
+                                                                false)
+                                                            .then((value2) => {
+                                                                  FirebaseAuth
+                                                                      .instance
+                                                                      .signOut(),
+                                                                  Navigator.of(
+                                                                          context)
+                                                                      .pushReplacement(PageTransition(
+                                                                          child:
+                                                                              SignIn(),
+                                                                          type:
+                                                                              PageTransitionType.fade))
+                                                                });
+                                                      });
+                                                    });
+                                                  },
+                                                  icon: Icon(Icons.check),
+                                                  label: Text("Okay")),
+                                              FlatButton.icon(
+                                                  onPressed: () {
+                                                    Navigator.pop(context);
+                                                  },
+                                                  icon: Icon(Icons.cancel),
+                                                  label: Text("Cancel"))
+                                            ],
+                                          );
+                                        });
+                                  },
+                                  child: Text('Forgot password?')),
+                            )
                           ],
                         )),
                   ),
@@ -293,10 +350,11 @@ class _PasswordViewState extends State<PasswordView> {
                                       flex: 1,
                                       child: FlatButton(
                                           height: double.maxFinite,
-                                          onPressed: () {
+                                          onPressed: () async {
                                             if (widget.password == '') {
-                                              dataBaseServices.setPassword(
-                                                  code, Constants.uid);
+                                              await dataBaseServices
+                                                  .setPassword(
+                                                      code, Constants.uid);
                                               Navigator.pop(context, false);
                                             } else {
                                               dataBaseServices
@@ -330,34 +388,23 @@ class _PasswordViewState extends State<PasswordView> {
     );
   }
 
-  bool setPassword() {
-    bool confirmation;
-    if (code.length != 4) {
-      return false;
-    }
-    dataBaseServices.setPassword(code, Constants.uid).then((confirmed) {
-      confirmation = confirmed;
-    });
-    return confirmation;
-  }
-
   addDigit(int digit) {
-    if (code.length > 3) {
+    if (code.trim().length > 3) {
       return;
     }
     setState(() {
-      code = code + digit.toString();
+      code = code.trim() + digit.toString();
       print('Code is $code');
       selectedindex = code.length;
     });
   }
 
   backspace() {
-    if (code.length == 0) {
+    if (code.trim().length == 0) {
       return;
     }
     setState(() {
-      code = code.substring(0, code.length - 1);
+      code = code.trim().substring(0, code.length - 1);
       selectedindex = code.length;
     });
   }
@@ -395,7 +442,7 @@ class DigitHolder extends StatelessWidget {
               blurRadius: 2,
             )
           ]),
-      child: code.length > index
+      child: code.trim().length > index
           ? Container(
               width: 15,
               height: 15,
