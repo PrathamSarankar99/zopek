@@ -17,6 +17,7 @@ class Utils {
       "PhoneNo": phoneNo,
       "SearchKeywords": searchKeywords,
       "Password": '',
+      "Bio": '',
     };
   }
 

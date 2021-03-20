@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:zopek/Services/Constants.dart';
 import 'package:zopek/Services/Helper.dart';
 
 class DataBaseServices {
@@ -29,6 +30,24 @@ class DataBaseServices {
         .collection("ChatRooms")
         .doc(chatRoomID)
         .set(chatRoomMap);
+  }
+
+  updateUsername(String username) {
+    FirebaseFirestore.instance.collection('Users').doc(Constants.uid).update({
+      'UserName': username,
+    });
+  }
+
+  updateBio(String bio) {
+    FirebaseFirestore.instance.collection('Users').doc(Constants.uid).update({
+      'Bio': bio,
+    });
+  }
+
+  updateProfilePicture(String url) {
+    FirebaseFirestore.instance.collection('Users').doc(Constants.uid).update({
+      'PhotoURL': url,
+    });
   }
 
   Future<bool> setPassword(String password, String uid) async {
@@ -92,5 +111,14 @@ class DataBaseServices {
         .where("Users", arrayContains: username)
         .orderBy("LastMessageTime", descending: true)
         .snapshots();
+  }
+
+  Future<QueryDocumentSnapshot> lastMessage(String chatRoomID) async {
+    QuerySnapshot snapshot = await FirebaseFirestore.instance
+        .collection('ChatRooms')
+        .doc(chatRoomID)
+        .collection("Messages")
+        .get();
+    return snapshot.docs.last;
   }
 }

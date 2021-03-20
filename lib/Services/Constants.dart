@@ -5,4 +5,5 @@ class Constants {
   static String photoURL = '';
   static String phoneNo = '';
   static String uid = '';
+  static String bio = '';
 }
