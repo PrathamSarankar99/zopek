@@ -98,6 +98,13 @@ class _SearchScreenState extends State<SearchScreen> {
                         NetworkImage(snap.docs[index].get("PhotoURL")),
                   ),
                   title: Text(snap.docs[index].get("UserName")),
+                  subtitle: Text(
+                    snap.docs[index].get("Bio"),
+                    maxLines: 2,
+                    style: TextStyle(
+                      fontSize: 13,
+                    ),
+                  ),
                 );
               }),
         ),

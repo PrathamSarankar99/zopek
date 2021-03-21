@@ -60,7 +60,7 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
           ],
         ),
-        body: Column(
+        body: ListView(
           children: [
             Container(
                 height: height * 0.13,
@@ -218,311 +218,62 @@ class _SettingsPageState extends State<SettingsPage> {
               thickness: 2,
               color: Colors.blue.withOpacity(0.5),
             ),
-            Expanded(
-              child: ListView(
-                shrinkWrap: true,
-                children: [
-                  Container(
-                    alignment: Alignment.topLeft,
-                    padding: EdgeInsets.only(top: 15),
-                    width: width,
-                    height: 256,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: EdgeInsets.only(left: width * 0.045),
-                          child: Text(
-                            "Account",
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.blue,
-                            ),
-                          ),
-                        ),
-                        ListTile(
-                          onTap: () {
-                            updateUsername(context);
-                          },
-                          title: Padding(
-                            padding: EdgeInsets.only(bottom: 5),
-                            child: Text(
-                              Constants.userName,
-                              style: TextStyle(
-                                fontSize: 17,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.black,
-                              ),
-                            ),
-                          ),
-                          subtitle: Text(
-                            "Username, tap to change",
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w300,
-                              color: Colors.grey,
-                            ),
-                          ),
-                        ),
-                        Padding(
-                          padding: EdgeInsets.only(left: width * 0.04),
-                          child: Divider(
-                            height: 0.5,
-                            thickness: 0.5,
-                          ),
-                        ),
-                        ListTile(
-                          onTap: () {
-                            updateBio(context);
-                          },
-                          title: Padding(
-                            padding: EdgeInsets.only(bottom: 5),
-                            child: Constants.bio.length > 1
-                                ? Text(Constants.bio)
-                                : Text(
-                                    "Bio",
-                                    style: TextStyle(
-                                      fontSize: 17,
-                                      fontWeight: FontWeight.w500,
-                                      color: Colors.black,
-                                    ),
-                                  ),
-                          ),
-                          subtitle: Text(
-                            "Add a few words about yourself.",
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w300,
-                              color: Colors.grey,
-                            ),
-                          ),
-                        ),
-                        Padding(
-                          padding: EdgeInsets.only(left: width * 0.04),
-                          child: Divider(
-                            height: 0.5,
-                            thickness: 0.5,
-                          ),
-                        ),
-                        ListTile(
-                          onTap: () {
-                            Navigator.push(
-                                context,
-                                PageTransition(
-                                    duration: Duration(milliseconds: 300),
-                                    child: ChangePhoneNo(),
-                                    type: PageTransitionType.fade));
-                          },
-                          title: Padding(
-                            padding: EdgeInsets.only(bottom: 5),
-                            child: Text(
-                              (Constants.phoneNo == ""
-                                  ? "Phone no."
-                                  : Constants.phoneNo),
-                              style: TextStyle(
-                                fontSize: 17,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.black,
-                              ),
-                            ),
-                          ),
-                          subtitle: Text(
-                            (Constants.phoneNo == ""
-                                ? "Add your phone no."
-                                : "Phone no. tap to change"),
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w300,
-                              color: Colors.grey,
-                            ),
-                          ),
-                        ),
-                        Padding(
-                          padding: EdgeInsets.only(left: width * 0.04),
-                          child: Divider(
-                            height: 0.5,
-                            thickness: 0.5,
-                          ),
-                        ),
-                      ],
-                    ),
+            ListTile(
+              leading: Container(
+                child: Icon(Icons.person),
+              ),
+              onTap: () {
+                updateUsername(context);
+              },
+              title: Padding(
+                padding: EdgeInsets.only(bottom: 5),
+                child: Text(
+                  Constants.userName,
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black,
                   ),
-                  Container(
-                    alignment: Alignment.topLeft,
-                    padding: EdgeInsets.only(top: 15),
-                    width: width,
-                    height: 155,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: EdgeInsets.only(left: width * 0.045),
-                          child: Text(
-                            "Settings",
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.blue,
-                            ),
-                          ),
+                ),
+              ),
+              subtitle: Text(
+                "Username, tap to change",
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w300,
+                  color: Colors.grey,
+                ),
+              ),
+            ),
+            ListTile(
+              leading: Container(
+                child: Icon(Icons.info_outline),
+              ),
+              onTap: () {
+                updateBio(context);
+              },
+              title: Padding(
+                padding: EdgeInsets.only(bottom: 5),
+                child: Constants.bio.length > 1
+                    ? Text(Constants.bio)
+                    : Text(
+                        "Bio",
+                        style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.black,
                         ),
-                        ListTile(
-                          onTap: () {},
-                          title: Row(
-                            textBaseline: TextBaseline.ideographic,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Container(
-                                  width: 50,
-                                  height: 50,
-                                  child: Icon(
-                                    Icons.notifications_none,
-                                    size: 25,
-                                    color: Colors.black.withOpacity(0.5),
-                                  )),
-                              Text(
-                                "Notifications and Sound",
-                                style: TextStyle(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.black.withOpacity(0.8),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Padding(
-                          padding: EdgeInsets.only(left: width * 0.04),
-                          child: Divider(
-                            height: 0.5,
-                            thickness: 0.5,
-                          ),
-                        ),
-                        ListTile(
-                          onTap: () {},
-                          title: Row(
-                            textBaseline: TextBaseline.ideographic,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Container(
-                                  width: 50,
-                                  height: 50,
-                                  child: Icon(
-                                    Icons.lock_outline_rounded,
-                                    size: 25,
-                                    color: Colors.black.withOpacity(0.5),
-                                  )),
-                              Text(
-                                "Privacy and Security",
-                                style: TextStyle(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.black.withOpacity(0.8),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Padding(
-                          padding: EdgeInsets.only(left: width * 0.04),
-                          child: Divider(
-                            height: 0.5,
-                            thickness: 0.5,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    alignment: Alignment.topLeft,
-                    padding: EdgeInsets.only(top: 15),
-                    width: width,
-                    height: 155,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: EdgeInsets.only(left: width * 0.045),
-                          child: Text(
-                            "Help",
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.blue,
-                            ),
-                          ),
-                        ),
-                        ListTile(
-                          onTap: () {},
-                          title: Row(
-                            textBaseline: TextBaseline.ideographic,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Container(
-                                  width: 50,
-                                  height: 50,
-                                  child: Icon(
-                                    Icons.chat,
-                                    size: 25,
-                                    color: Colors.black.withOpacity(0.5),
-                                  )),
-                              Text(
-                                "Ask a Question",
-                                style: TextStyle(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.black.withOpacity(0.8),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Padding(
-                          padding: EdgeInsets.only(left: width * 0.04),
-                          child: Divider(
-                            height: 0.5,
-                            thickness: 0.5,
-                          ),
-                        ),
-                        ListTile(
-                          onTap: () {},
-                          title: Row(
-                            textBaseline: TextBaseline.ideographic,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Container(
-                                  width: 50,
-                                  height: 50,
-                                  child: Icon(
-                                    Icons.support_agent,
-                                    size: 25,
-                                    color: Colors.black.withOpacity(0.5),
-                                  )),
-                              Text(
-                                "Suggest us",
-                                style: TextStyle(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.black.withOpacity(0.8),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Padding(
-                          padding: EdgeInsets.only(left: width * 0.04),
-                          child: Divider(
-                            height: 0.5,
-                            thickness: 0.5,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+                      ),
+              ),
+              subtitle: Text(
+                Constants.bio == ''
+                    ? "Add a few words about yourself."
+                    : "Tap to change",
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w300,
+                  color: Colors.grey,
+                ),
               ),
             ),
           ],
@@ -530,14 +281,15 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   updateUsername(BuildContext context) {
-    TextEditingController tdc = new TextEditingController();
+    TextEditingController tdc = new TextEditingController()
+      ..text = Constants.userName;
     showDialog(
         context: context,
         builder: (context) {
           return AlertDialog(
             content: TextField(
               controller: tdc,
-              decoration: InputDecoration(hintText: 'Username'),
+              decoration: InputDecoration(labelText: 'Username'),
             ),
             actions: [
               FlatButton.icon(
@@ -562,7 +314,8 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   updateBio(BuildContext context) {
-    TextEditingController tdc = new TextEditingController();
+    TextEditingController tdc = new TextEditingController()
+      ..text = Constants.bio;
     showDialog(
         context: context,
         builder: (context) {
@@ -571,7 +324,7 @@ class _SettingsPageState extends State<SettingsPage> {
               maxLines: 5,
               minLines: 1,
               controller: tdc,
-              decoration: InputDecoration(hintText: 'Add/Update your bio'),
+              decoration: InputDecoration(labelText: 'Add/Update your bio'),
             ),
             actions: [
               FlatButton.icon(

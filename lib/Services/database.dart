@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:zopek/Services/Constants.dart';
 import 'package:zopek/Services/Helper.dart';
+import 'package:zopek/Services/Utils.dart';
 
 class DataBaseServices {
   uploadUserInfo(Map<String, dynamic> map, String uid) {
@@ -33,8 +34,10 @@ class DataBaseServices {
   }
 
   updateUsername(String username) {
+    List<String> searchKeywords = Utils().generateKeywordList(username);
     FirebaseFirestore.instance.collection('Users').doc(Constants.uid).update({
       'UserName': username,
+      'SearchKeywords': searchKeywords,
     });
   }
 
@@ -111,14 +114,5 @@ class DataBaseServices {
         .where("Users", arrayContains: username)
         .orderBy("LastMessageTime", descending: true)
         .snapshots();
-  }
-
-  Future<QueryDocumentSnapshot> lastMessage(String chatRoomID) async {
-    QuerySnapshot snapshot = await FirebaseFirestore.instance
-        .collection('ChatRooms')
-        .doc(chatRoomID)
-        .collection("Messages")
-        .get();
-    return snapshot.docs.last;
   }
 }

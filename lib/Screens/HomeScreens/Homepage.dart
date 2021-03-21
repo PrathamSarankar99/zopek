@@ -46,6 +46,7 @@ class _HomepageState extends State<Homepage> {
   double _containerheight = 200;
   @override
   Widget build(BuildContext context) {
+    print("Uid is : ${Constants.uid}");
     double height = MediaQuery.of(context).size.height;
     double width = MediaQuery.of(context).size.width;
     double opacity = 1 -
@@ -54,7 +55,7 @@ class _HomepageState extends State<Homepage> {
     return Scaffold(
       backgroundColor: Colors.black.withBlue(40),
       body: StreamBuilder<QuerySnapshot>(
-          stream: querySnapshotStream,
+          stream: dataBaseServices.getExistingChatRooms(Constants.uid),
           builder: (context, roomSnapshot) {
             return Stack(
               children: [
@@ -200,7 +201,7 @@ class _HomepageState extends State<Homepage> {
                                                             .toString()
                                                             .length >
                                                         15
-                                                    ? '${userSnapshot.data.docs[0].get("UserName").toString().substring(0, 15)}...'
+                                                    ? '${userSnapshot.data.get("UserName").toString().substring(0, 15)}...'
                                                     : userSnapshot.data
                                                         .get("UserName")
                                                         .toString();
@@ -586,8 +587,8 @@ class _HomepageState extends State<Homepage> {
                                               );
                                             }
 
-                                            return FutureBuilder<QuerySnapshot>(
-                                              future: FirebaseFirestore.instance
+                                            return StreamBuilder<QuerySnapshot>(
+                                              stream: FirebaseFirestore.instance
                                                   .collection("ChatRooms")
                                                   .doc(utils.getChatRoomID(
                                                       Constants.uid, uid))
@@ -595,7 +596,7 @@ class _HomepageState extends State<Homepage> {
                                                   .orderBy("Time",
                                                       descending: true)
                                                   .limit(1)
-                                                  .get(),
+                                                  .snapshots(),
                                               builder: (context,
                                                   lastMessageSnapshot) {
                                                 return userMessageListTile(
@@ -669,7 +670,9 @@ class _HomepageState extends State<Homepage> {
         .where("Users", arrayContains: uid)
         .get();
     int length = snapshot.docs.length;
-    isSelected = List.generate(length, (index) => false, growable: true);
+    setState(() {
+      isSelected = List.generate(length, (index) => false, growable: true);
+    });
     print(isSelected.toString());
   }
 
@@ -806,10 +809,6 @@ class _HomepageState extends State<Homepage> {
       Constants.photoURL = element.get("PhotoURL");
       Constants.phoneNo = element.get("PhoneNo");
       Constants.uid = element.id;
-      setState(() {
-        querySnapshotStream =
-            dataBaseServices.getExistingChatRooms(Constants.uid);
-      });
     });
   }
 }

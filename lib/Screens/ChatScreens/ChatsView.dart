@@ -410,7 +410,7 @@ class _ChatsState extends State<Chats> {
       setState(() {
         photoURL = value.get("PhotoURL");
         username = value.get("UserName").toString().length > 15
-            ? '${value.get("Name").toString().substring(0, 15)}...'
+            ? '${value.get("UserName").toString().substring(0, 15)}...'
             : value.get("UserName").toString();
 
         email = value.get("Email");
@@ -459,6 +459,9 @@ class _ChatsState extends State<Chats> {
                 isSelected[isSelected.length - 1 - index] =
                     !isSelected[isSelected.length - 1 - index];
                 print(isSelected);
+                return;
+              }
+              if (imageURL == '') {
                 return;
               }
               Navigator.push(
