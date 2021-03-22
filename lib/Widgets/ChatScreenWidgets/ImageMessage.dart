@@ -440,6 +440,8 @@ class _ImageMessageState extends State<ImageMessage> {
         progress =
             event.bytesTransferred.toDouble() / event.totalBytes.toDouble();
       });
+    }).onError((e) {
+      print('There is an error : $e');
     });
     TaskSnapshot taskSnapshot = await uploadTask.whenComplete(() async {
       String downloadURL = await reference.getDownloadURL();

@@ -809,6 +809,7 @@ class _HomepageState extends State<Homepage> {
       Constants.photoURL = element.get("PhotoURL");
       Constants.phoneNo = element.get("PhoneNo");
       Constants.uid = element.id;
+      Constants.bio = element.get('Bio');
     });
   }
 }

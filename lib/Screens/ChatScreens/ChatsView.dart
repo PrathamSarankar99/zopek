@@ -1,10 +1,12 @@
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:page_transition/page_transition.dart';
+import 'package:path/path.dart' as Path;
 import 'package:scroll_to_index/scroll_to_index.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:swipe_to/swipe_to.dart';
@@ -470,20 +472,6 @@ class _ChatsState extends State<Chats> {
                       child: Scaffold(
                         appBar: AppBar(
                           title: Text(username),
-                          actions: [
-                            Padding(
-                              padding: EdgeInsets.fromLTRB(0, 0, 15, 0),
-                              child: Icon(Icons.star_border),
-                            ),
-                            Padding(
-                              padding: EdgeInsets.fromLTRB(0, 0, 15, 0),
-                              child: Icon(Icons.forward),
-                            ),
-                            Padding(
-                              padding: EdgeInsets.fromLTRB(0, 0, 15, 0),
-                              child: Icon(Icons.more_vert),
-                            ),
-                          ],
                           brightness: Brightness.dark,
                           backgroundColor: Colors.black.withBlue(40),
                         ),
@@ -550,8 +538,10 @@ class _ChatsState extends State<Chats> {
   Future sendImageMessage() async {
     ImagePicker imagePicker = new ImagePicker();
     PickedFile imageFile = await imagePicker.getImage(
+      imageQuality: 40,
       source: ImageSource.camera,
     );
+
     sendMessage(imageFile.path);
 
     // Reference reference = FirebaseStorage.instance.ref().child(

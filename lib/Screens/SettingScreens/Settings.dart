@@ -23,6 +23,7 @@ class _SettingsPageState extends State<SettingsPage> {
   double progress = 0;
   @override
   Widget build(BuildContext context) {
+    print('Constants : ${Constants.bio}');
     var height = MediaQuery.of(context).size.height;
     var width = MediaQuery.of(context).size.width;
     return Scaffold(
@@ -257,7 +258,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 child: Constants.bio.length > 1
                     ? Text(Constants.bio)
                     : Text(
-                        "Bio",
+                        Constants.bio == '' ? "Bio" : Constants.bio,
                         style: TextStyle(
                           fontSize: 17,
                           fontWeight: FontWeight.w500,
