@@ -15,7 +15,6 @@ class AuthServices {
     try {
       await _firebaseAuth.signInWithEmailAndPassword(
           email: email, password: password);
-      utils.saveSharedPreferencesLoggedStatus(true);
     } on FirebaseAuthException catch (e) {
       if (e.code == 'user-not-found') {
         return "The user doesn't exist.";
@@ -28,6 +27,8 @@ class AuthServices {
     }
   }
 
+  Stream<User> get loggedInStream => _firebaseAuth.authStateChanges();
+
   Future signUpWithEmailandPassword(
       String username, String email, String password) async {
     try {
@@ -39,7 +40,6 @@ class AuthServices {
       Map<String, dynamic> map = utils.mapForAuth(
           username, username, email, photoURL, "", searchKeywords);
       dataBaseServices.uploadUserInfo(map, user.uid);
-      await utils.saveSharedPreferencesDetails(user.uid, username, user.email);
     } on FirebaseAuthException catch (e) {
       if (e.code == 'user-not-found') {
         return "The user doesn't exist.";
@@ -78,7 +78,6 @@ class AuthServices {
         photoURL,
         (user.phoneNumber == null ? "" : user.phoneNumber),
         searchKeywords);
-    await utils.saveSharedPreferencesDetails(user.uid, username, user.email);
     if (userCredential.additionalUserInfo.isNewUser) {
       dataBaseServices.uploadUserInfo(map, user.uid);
     }

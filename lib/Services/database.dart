@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:zopek/Services/Constants.dart';
-import 'package:zopek/Services/Helper.dart';
 import 'package:zopek/Services/Utils.dart';
 
 class DataBaseServices {
@@ -69,9 +69,11 @@ class DataBaseServices {
   }
 
   updateUserPhoneNo(String newPhoneNumber) async {
-    String uid = await Helper.getUserID();
-    DocumentSnapshot snapshot =
-        await FirebaseFirestore.instance.collection("Users").doc(uid).get();
+    User user = FirebaseAuth.instance.currentUser;
+    DocumentSnapshot snapshot = await FirebaseFirestore.instance
+        .collection("Users")
+        .doc(user.uid)
+        .get();
     snapshot.reference.update({
       "PhoneNo": newPhoneNumber,
     });

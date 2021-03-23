@@ -7,9 +7,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:path/path.dart';
-import 'package:zopek/Screens/SettingScreens/ChangePhoneNo.dart';
 import 'package:zopek/Services/Constants.dart';
-import 'package:zopek/Services/Helper.dart';
 import 'package:zopek/Services/database.dart';
 import 'package:zopek/Screens/AuthScreens/Signin.dart';
 
@@ -37,9 +35,10 @@ class _SettingsPageState extends State<SettingsPage> {
                 if (value == 'logout') {
                   await FirebaseAuth.instance.signOut();
                   await GoogleSignIn().signOut();
-                  Helper.saveUserLoggedInSP(false);
-                  Navigator.pushReplacement(context,
-                      MaterialPageRoute(builder: (context) => SignIn()));
+                  Navigator.pushReplacement(
+                      context,
+                      PageTransition(
+                          child: SignIn(), type: PageTransitionType.fade));
                 }
               },
               child: Padding(

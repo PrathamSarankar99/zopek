@@ -5,7 +5,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:zopek/Screens/AuthScreens/Signin.dart';
 import 'package:zopek/Services/Constants.dart';
-import 'package:zopek/Services/Helper.dart';
 import 'package:zopek/Services/database.dart';
 
 class PasswordView extends StatefulWidget {
@@ -172,24 +171,10 @@ class _PasswordViewState extends State<PasswordView> {
                                                   onPressed: () async {
                                                     setState(() {
                                                       dataBaseServices
-                                                          .setPassword(
-                                                              '', Constants.uid)
-                                                          .then((value1) {
-                                                        Helper.saveUserLoggedInSP(
-                                                                false)
-                                                            .then((value2) => {
-                                                                  FirebaseAuth
-                                                                      .instance
-                                                                      .signOut(),
-                                                                  Navigator.of(
-                                                                          context)
-                                                                      .pushReplacement(PageTransition(
-                                                                          child:
-                                                                              SignIn(),
-                                                                          type:
-                                                                              PageTransitionType.fade))
-                                                                });
-                                                      });
+                                                          .setPassword('',
+                                                              Constants.uid);
+                                                      FirebaseAuth.instance
+                                                          .signOut();
                                                     });
                                                   },
                                                   icon: Icon(Icons.check),

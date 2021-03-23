@@ -1,10 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:zopek/Screens/HomeScreens/SearchScreen.dart';
 import 'package:zopek/Services/Constants.dart';
-import 'package:zopek/Services/Helper.dart';
 import 'package:zopek/Services/Utils.dart';
 import 'package:zopek/Services/database.dart';
 import 'package:zopek/Screens/SettingScreens/Settings.dart' as settings;
@@ -125,16 +126,6 @@ class _HomepageState extends State<Homepage> {
                                         ),
                                         child: GestureDetector(
                                           onTap: () async {
-                                            // QuerySnapshot snapshot =
-                                            //     await FirebaseFirestore.instance
-                                            //         .collection("Users")
-                                            //         .get();
-                                            // snapshot.docs
-                                            //     .forEach((element) async {
-                                            //   element.reference
-                                            //       .update({"PhoneNo": ""});
-                                            // });
-                                            await GoogleSignIn().signOut();
                                             Navigator.push(
                                                 context,
                                                 PageTransition(
@@ -623,10 +614,10 @@ class _HomepageState extends State<Homepage> {
   }
 
   deleteEmptyChatRooms() async {
-    String uid = await Helper.getUserID();
+    User user = FirebaseAuth.instance.currentUser;
     QuerySnapshot snapshot = await FirebaseFirestore.instance
         .collection("ChatRooms")
-        .where("Users", arrayContains: uid)
+        .where("Users", arrayContains: user.uid)
         .get();
     snapshot.docs.forEach((element) async {
       QuerySnapshot snapshot = await FirebaseFirestore.instance
@@ -664,10 +655,10 @@ class _HomepageState extends State<Homepage> {
   }
 
   void populateSelection() async {
-    String uid = await Helper.getUserID();
+    User user = FirebaseAuth.instance.currentUser;
     QuerySnapshot snapshot = await FirebaseFirestore.instance
         .collection("ChatRooms")
-        .where("Users", arrayContains: uid)
+        .where("Users", arrayContains: user.uid)
         .get();
     int length = snapshot.docs.length;
     setState(() {
@@ -800,8 +791,8 @@ class _HomepageState extends State<Homepage> {
 
   getUserDetails() async {
     Stream<DocumentSnapshot> snap;
-    String uid = await Helper.getUserID();
-    snap = dataBaseServices.getUserByID(uid);
+    User user = FirebaseAuth.instance.currentUser;
+    snap = dataBaseServices.getUserByID(user.uid);
     snap.forEach((element) async {
       Constants.userName = element.get("UserName");
       Constants.fullName = element.get("FullName");

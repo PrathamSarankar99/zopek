@@ -1,9 +1,11 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:zopek/Screens/AuthScreens/Signin.dart';
 import 'package:zopek/Screens/ChatScreens/PasswordView.dart';
 import 'package:zopek/Screens/HomeScreens/Homepage.dart';
-import 'package:zopek/Services/Helper.dart';
+
+import 'package:zopek/Services/auth.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,28 +30,22 @@ class AuthenticityDecider extends StatefulWidget {
 
 class _AuthenticityDeciderState extends State<AuthenticityDecider> {
   bool isUserLoggedIn = false;
+  AuthServices authServices;
   @override
   void initState() {
     super.initState();
-    getUserLoggedInStatus();
-  }
-
-  getUserLoggedInStatus() async {
-    await Helper.getUserLoggedInSP().then((value) {
-      if (value.runtimeType == bool) {
-        setState(() {
-          isUserLoggedIn = value;
-        });
-      }
-    });
+    authServices = new AuthServices();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (isUserLoggedIn) {
-      return Homepage();
-    } else {
-      return SignIn();
-    }
+    return StreamBuilder<User>(
+        stream: authServices.loggedInStream,
+        builder: (context, user) {
+          if (user.hasData) {
+            return Homepage();
+          }
+          return SignIn();
+        });
   }
 }

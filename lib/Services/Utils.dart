@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:zopek/Services/Helper.dart';
 
 class Utils {
   Map<String, dynamic> mapForAuth(
@@ -38,22 +37,6 @@ class Utils {
       keywordsList.add(string.toUpperCase().substring(0, i + 1));
     }
     return keywordsList;
-  }
-
-  Future<void> saveSharedPreferencesDetails(
-      String uid, String username, String email) async {
-    await Helper.saveUserID(uid);
-    await Helper.saveUserNameSP(username)
-        .then((value) => print("Your username saved successfully"));
-    await Helper.saveUserEmailSP(email)
-        .then((value) => print("Your email saved successfully"));
-    await Helper.saveUserLoggedInSP(true)
-        .then((value) => print("Your loggedIn status is true now."));
-  }
-
-  Future<void> saveSharedPreferencesLoggedStatus(bool isLoggedin) async {
-    await Helper.saveUserLoggedInSP(isLoggedin)
-        .then((value) => print("Your loggedIn status is true now."));
   }
 
   String getChatRoomID(String a, String b) {
