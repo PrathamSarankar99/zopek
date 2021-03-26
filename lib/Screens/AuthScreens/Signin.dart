@@ -2,6 +2,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:progress_indicators/progress_indicators.dart';
+import 'package:zopek/Screens/AuthScreens/Signup.dart';
 import 'package:zopek/Screens/HomeScreens/Homepage.dart';
 import 'package:zopek/Services/auth.dart';
 import 'package:zopek/Services/database.dart';
@@ -28,7 +29,7 @@ class _SignInState extends State<SignIn> {
         Navigator.push(
             context,
             PageTransition(
-                child: SignIn(),
+                child: Signup(),
                 type: PageTransitionType.rightToLeft,
                 duration: Duration(milliseconds: 300)));
       };

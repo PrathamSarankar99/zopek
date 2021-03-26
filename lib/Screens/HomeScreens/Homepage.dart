@@ -1,11 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:zopek/Screens/HomeScreens/SearchScreen.dart';
-import 'package:zopek/Services/Constants.dart';
+import 'package:zopek/Modals/Constants.dart';
 import 'package:zopek/Services/Utils.dart';
 import 'package:zopek/Services/database.dart';
 import 'package:zopek/Screens/SettingScreens/Settings.dart' as settings;
@@ -679,6 +677,7 @@ class _HomepageState extends State<Homepage> {
     return Column(
       children: [
         ListTile(
+            hoverColor: Colors.black,
             selectedTileColor: Colors.cyan.withOpacity(0.2),
             selected: this.isSelected.isEmpty || this.isSelected.length <= index
                 ? false

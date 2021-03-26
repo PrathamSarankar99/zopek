@@ -1,13 +1,16 @@
 import 'dart:io';
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_absolute_path/flutter_absolute_path.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:multi_image_picker/multi_image_picker.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:path/path.dart';
-import 'package:zopek/Services/Constants.dart';
+import 'package:zopek/Modals/Camera.dart';
+import 'package:zopek/Modals/Constants.dart';
+import 'package:zopek/Modals/ImageSource.dart';
+import 'package:zopek/Screens/ChatScreens/Capture.dart';
 import 'package:zopek/Services/database.dart';
 import 'package:zopek/Screens/AuthScreens/Signin.dart';
 
@@ -35,10 +38,9 @@ class _SettingsPageState extends State<SettingsPage> {
                 if (value == 'logout') {
                   await FirebaseAuth.instance.signOut();
                   await GoogleSignIn().signOut();
-                  Navigator.pushReplacement(
-                      context,
-                      PageTransition(
-                          child: SignIn(), type: PageTransitionType.fade));
+                  Navigator.of(context).popUntil((route) => route.isFirst);
+                  Navigator.of(context).pushReplacement(PageTransition(
+                      child: SignIn(), type: PageTransitionType.fade));
                 }
               },
               child: Padding(
@@ -124,8 +126,10 @@ class _SettingsPageState extends State<SettingsPage> {
                     )
                   ],
                 )),
-            FlatButton(
-                height: height * 0.07,
+            TextButton(
+                style: ButtonStyle(
+                    minimumSize:
+                        MaterialStateProperty.all(Size(width, height * 0.07))),
                 onPressed: () async {
                   showModalBottomSheet(
                       context: context,
@@ -292,7 +296,7 @@ class _SettingsPageState extends State<SettingsPage> {
               decoration: InputDecoration(labelText: 'Username'),
             ),
             actions: [
-              FlatButton.icon(
+              TextButton.icon(
                   onPressed: () async {
                     dataBaseServices.updateUsername(tdc.text.trim());
                     Navigator.pop(context);
@@ -302,7 +306,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   },
                   icon: Icon(Icons.check),
                   label: Text("Okay")),
-              FlatButton.icon(
+              TextButton.icon(
                   onPressed: () {
                     Navigator.pop(context);
                   },
@@ -327,7 +331,7 @@ class _SettingsPageState extends State<SettingsPage> {
               decoration: InputDecoration(labelText: 'Add/Update your bio'),
             ),
             actions: [
-              FlatButton.icon(
+              TextButton.icon(
                   onPressed: () async {
                     dataBaseServices.updateBio(tdc.text.trim());
                     Navigator.pop(context);
@@ -337,7 +341,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   },
                   icon: Icon(Icons.check),
                   label: Text("Okay")),
-              FlatButton.icon(
+              TextButton.icon(
                   onPressed: () {
                     Navigator.pop(context);
                   },
@@ -349,19 +353,29 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   updateprofilepicture(ImageSource imageSource, BuildContext context) async {
-    ImagePicker imagePicker = new ImagePicker();
-    PickedFile imageFile = await imagePicker.getImage(
-      source: imageSource,
-    );
-    if (imageFile == null) {
+    String path;
+    if (imageSource == ImageSource.camera) {
+      path = await Navigator.push(
+          context,
+          PageTransition(
+              child: Capture(
+                  cameraDescriptions:
+                      CameraConfigurations.cameraDescriptionList),
+              type: PageTransitionType.fade));
+    } else {
+      List<Asset> imageFile =
+          await MultiImagePicker.pickImages(maxImages: 1, enableCamera: true);
+      path = await FlutterAbsolutePath.getAbsolutePath(imageFile[0].identifier);
+    }
+    if (path == null) {
       print('No image selected');
       return;
     }
     Navigator.pop(context);
     Reference reference = FirebaseStorage.instance
         .ref()
-        .child("${Constants.uid}/profilepicture/${basename(imageFile.path)}");
-    UploadTask uploadTask = reference.putFile(File(imageFile.path));
+        .child("${Constants.uid}/profilepicture/${basename(path)}");
+    UploadTask uploadTask = reference.putFile(File(path));
     uploadTask.snapshotEvents.listen((event) {
       setState(() {
         progress = (event.bytesTransferred / event.totalBytes);

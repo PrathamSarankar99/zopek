@@ -1,10 +1,10 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:zopek/Screens/AuthScreens/Signin.dart';
-import 'package:zopek/Services/Constants.dart';
+import 'package:zopek/Modals/Constants.dart';
 import 'package:zopek/Services/database.dart';
 
 class PasswordView extends StatefulWidget {
@@ -167,7 +167,7 @@ class _PasswordViewState extends State<PasswordView> {
                                             content: Text(
                                                 "Your pin will be reset and you will be logged out."),
                                             actions: [
-                                              FlatButton.icon(
+                                              TextButton.icon(
                                                   onPressed: () async {
                                                     setState(() {
                                                       dataBaseServices
@@ -175,11 +175,19 @@ class _PasswordViewState extends State<PasswordView> {
                                                               Constants.uid);
                                                       FirebaseAuth.instance
                                                           .signOut();
+                                                      GoogleSignIn().signOut();
+                                                      Navigator.pushReplacement(
+                                                          context,
+                                                          PageTransition(
+                                                              child: SignIn(),
+                                                              type:
+                                                                  PageTransitionType
+                                                                      .fade));
                                                     });
                                                   },
                                                   icon: Icon(Icons.check),
                                                   label: Text("Okay")),
-                                              FlatButton.icon(
+                                              TextButton.icon(
                                                   onPressed: () {
                                                     Navigator.pop(context);
                                                   },
@@ -207,8 +215,12 @@ class _PasswordViewState extends State<PasswordView> {
                                   children: [
                                     Expanded(
                                       flex: 1,
-                                      child: FlatButton(
-                                          height: double.maxFinite,
+                                      child: TextButton(
+                                          style: ButtonStyle(
+                                            minimumSize:
+                                                MaterialStateProperty.all(
+                                                    Size(0, double.maxFinite)),
+                                          ),
                                           onPressed: () {
                                             addDigit(1);
                                           },
@@ -216,8 +228,12 @@ class _PasswordViewState extends State<PasswordView> {
                                     ),
                                     Expanded(
                                       flex: 1,
-                                      child: FlatButton(
-                                          height: double.maxFinite,
+                                      child: TextButton(
+                                          style: ButtonStyle(
+                                            minimumSize:
+                                                MaterialStateProperty.all(
+                                                    Size(0, double.maxFinite)),
+                                          ),
                                           onPressed: () {
                                             addDigit(2);
                                           },
@@ -225,8 +241,12 @@ class _PasswordViewState extends State<PasswordView> {
                                     ),
                                     Expanded(
                                       flex: 1,
-                                      child: FlatButton(
-                                          height: double.maxFinite,
+                                      child: TextButton(
+                                          style: ButtonStyle(
+                                            minimumSize:
+                                                MaterialStateProperty.all(
+                                                    Size(0, double.maxFinite)),
+                                          ),
                                           onPressed: () {
                                             addDigit(3);
                                           },
@@ -242,8 +262,12 @@ class _PasswordViewState extends State<PasswordView> {
                                   children: [
                                     Expanded(
                                       flex: 1,
-                                      child: FlatButton(
-                                          height: double.maxFinite,
+                                      child: TextButton(
+                                          style: ButtonStyle(
+                                            minimumSize:
+                                                MaterialStateProperty.all(
+                                                    Size(0, double.maxFinite)),
+                                          ),
                                           onPressed: () {
                                             addDigit(4);
                                           },
@@ -251,8 +275,12 @@ class _PasswordViewState extends State<PasswordView> {
                                     ),
                                     Expanded(
                                       flex: 1,
-                                      child: FlatButton(
-                                          height: double.maxFinite,
+                                      child: TextButton(
+                                          style: ButtonStyle(
+                                            minimumSize:
+                                                MaterialStateProperty.all(
+                                                    Size(0, double.maxFinite)),
+                                          ),
                                           onPressed: () {
                                             addDigit(5);
                                           },
@@ -260,8 +288,12 @@ class _PasswordViewState extends State<PasswordView> {
                                     ),
                                     Expanded(
                                       flex: 1,
-                                      child: FlatButton(
-                                          height: double.maxFinite,
+                                      child: TextButton(
+                                          style: ButtonStyle(
+                                            minimumSize:
+                                                MaterialStateProperty.all(
+                                                    Size(0, double.maxFinite)),
+                                          ),
                                           onPressed: () {
                                             addDigit(6);
                                           },
@@ -277,8 +309,12 @@ class _PasswordViewState extends State<PasswordView> {
                                   children: [
                                     Expanded(
                                       flex: 1,
-                                      child: FlatButton(
-                                          height: double.maxFinite,
+                                      child: TextButton(
+                                          style: ButtonStyle(
+                                            minimumSize:
+                                                MaterialStateProperty.all(
+                                                    Size(0, double.maxFinite)),
+                                          ),
                                           onPressed: () {
                                             addDigit(7);
                                           },
@@ -286,8 +322,12 @@ class _PasswordViewState extends State<PasswordView> {
                                     ),
                                     Expanded(
                                       flex: 1,
-                                      child: FlatButton(
-                                          height: double.maxFinite,
+                                      child: TextButton(
+                                          style: ButtonStyle(
+                                            minimumSize:
+                                                MaterialStateProperty.all(
+                                                    Size(0, double.maxFinite)),
+                                          ),
                                           onPressed: () {
                                             addDigit(8);
                                           },
@@ -295,8 +335,12 @@ class _PasswordViewState extends State<PasswordView> {
                                     ),
                                     Expanded(
                                       flex: 1,
-                                      child: FlatButton(
-                                          height: double.maxFinite,
+                                      child: TextButton(
+                                          style: ButtonStyle(
+                                            minimumSize:
+                                                MaterialStateProperty.all(
+                                                    Size(0, double.maxFinite)),
+                                          ),
                                           onPressed: () {
                                             addDigit(9);
                                           },
@@ -313,8 +357,12 @@ class _PasswordViewState extends State<PasswordView> {
                                   children: [
                                     Expanded(
                                       flex: 1,
-                                      child: FlatButton(
-                                          height: double.maxFinite,
+                                      child: TextButton(
+                                          style: ButtonStyle(
+                                              minimumSize:
+                                                  MaterialStateProperty.all(
+                                                      Size(0,
+                                                          double.maxFinite))),
                                           onPressed: () {
                                             backspace();
                                           },
@@ -324,8 +372,12 @@ class _PasswordViewState extends State<PasswordView> {
                                     ),
                                     Expanded(
                                       flex: 1,
-                                      child: FlatButton(
-                                          height: double.maxFinite,
+                                      child: TextButton(
+                                          style: ButtonStyle(
+                                              minimumSize:
+                                                  MaterialStateProperty.all(
+                                                      Size(0,
+                                                          double.maxFinite))),
                                           onPressed: () {
                                             addDigit(0);
                                           },
@@ -333,8 +385,12 @@ class _PasswordViewState extends State<PasswordView> {
                                     ),
                                     Expanded(
                                       flex: 1,
-                                      child: FlatButton(
-                                          height: double.maxFinite,
+                                      child: TextButton(
+                                          style: ButtonStyle(
+                                              minimumSize:
+                                                  MaterialStateProperty.all(
+                                                      Size(0,
+                                                          double.maxFinite))),
                                           onPressed: () async {
                                             if (widget.password == '') {
                                               await dataBaseServices

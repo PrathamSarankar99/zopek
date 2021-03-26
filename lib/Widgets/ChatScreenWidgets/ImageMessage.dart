@@ -1,13 +1,13 @@
 import 'dart:math';
 import 'dart:ui';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:dio/dio.dart';
+// import 'package:dio/dio.dart';
 import 'package:file_utils/file_utils.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:zopek/Services/Constants.dart';
+import 'package:zopek/Modals/Constants.dart';
 import 'package:path/path.dart' as Path;
 import 'dart:io';
 
@@ -57,13 +57,13 @@ class _ImageMessageState extends State<ImageMessage> {
   Widget build(BuildContext context) {
     String replyText = replySpecifier(widget.snapshot.get('RepliedTo'));
     Color selectedColor = widget.isSelected
-        ? (!(widget.snapshot.get("Sender") == Constants.userName)
+        ? (!(widget.snapshot.get("Sender") == Constants.uid)
             ? Colors.amber.shade300.withOpacity(0.5)
             : Color.fromRGBO(23, 105, 164, 0.5))
         : Colors.transparent;
     print(downloadingprogress);
     return (widget.snapshot.get("ImageURL") == '' &&
-            !(widget.snapshot.get("Sender") == Constants.userName))
+            !(widget.snapshot.get("Sender") == Constants.uid))
         ? Container()
         : Container(
             color: selectedColor,
@@ -73,17 +73,15 @@ class _ImageMessageState extends State<ImageMessage> {
                 children: [
                   repliedAddOn(replyText),
                   Container(
-                    alignment:
-                        (widget.snapshot.get("Sender") == Constants.userName)
-                            ? Alignment.centerRight
-                            : Alignment.centerLeft,
+                    alignment: (widget.snapshot.get("Sender") == Constants.uid)
+                        ? Alignment.centerRight
+                        : Alignment.centerLeft,
                     height: 180,
                     color: Colors.transparent,
                     child: Container(
-                      margin:
-                          (widget.snapshot.get("Sender") == Constants.userName)
-                              ? EdgeInsets.only(right: 22)
-                              : EdgeInsets.only(left: 22),
+                      margin: (widget.snapshot.get("Sender") == Constants.uid)
+                          ? EdgeInsets.only(right: 22)
+                          : EdgeInsets.only(left: 22),
                       decoration: BoxDecoration(
                         color: Colors.blue,
                         borderRadius: BorderRadius.all(Radius.circular(20)),
@@ -109,14 +107,15 @@ class _ImageMessageState extends State<ImageMessage> {
                           ),
                           ClipRRect(
                             borderRadius: BorderRadius.all(Radius.circular(20)),
-                            child: (widget.snapshot.get("Sender") ==
-                                    Constants.userName)
-                                ? (widget.snapshot.get("ImageURL") != ''
-                                    ? postUpload()
-                                    : preUpload())
-                                : (widget.snapshot.get("FilePath2") != ''
-                                    ? postDownload()
-                                    : preDownload()),
+                            child:
+                                (widget.snapshot.get("Sender") == Constants.uid)
+                                    ? (widget.snapshot.get("ImageURL") != ''
+                                        ? postUpload()
+                                        : preUpload())
+                                    : networkImage(true),
+                            // : (widget.snapshot.get("FilePath2") != ''
+                            //     ? postDownload()
+                            //     : preDownload()),
                           ),
                         ],
                       ),
@@ -132,10 +131,10 @@ class _ImageMessageState extends State<ImageMessage> {
     if (widget.snapshot.get("RepliedTo").isEmpty) {
       return Container();
     }
-    Alignment alignment = (widget.snapshot.get("Sender") == Constants.userName)
+    Alignment alignment = (widget.snapshot.get("Sender") == Constants.uid)
         ? Alignment.centerRight
         : Alignment.centerLeft;
-    Color color = (widget.snapshot.get('RepliedTo')[0] == Constants.userName
+    Color color = (widget.snapshot.get('RepliedTo')[0] == Constants.uid
         ? Color.fromRGBO(23, 105, 164, 0.8)
         : Colors.amber.shade300.withOpacity(0.8));
     return GestureDetector(
@@ -144,12 +143,12 @@ class _ImageMessageState extends State<ImageMessage> {
         children: [
           Container(
               alignment: alignment,
-              margin: (widget.snapshot.get("Sender") == Constants.userName)
+              margin: (widget.snapshot.get("Sender") == Constants.uid)
                   ? EdgeInsets.only(right: 20, top: 20)
                   : EdgeInsets.only(left: 20, top: 20),
               child: Text(text)),
           Container(
-            margin: (widget.snapshot.get("Sender") == Constants.userName)
+            margin: (widget.snapshot.get("Sender") == Constants.uid)
                 ? EdgeInsets.only(
                     right: 20,
                     left: MediaQuery.of(context).size.width * 0.20,
@@ -161,7 +160,7 @@ class _ImageMessageState extends State<ImageMessage> {
             alignment: alignment,
             decoration: BoxDecoration(
                 color: Colors.transparent,
-                border: (widget.snapshot.get("Sender") == Constants.userName)
+                border: (widget.snapshot.get("Sender") == Constants.uid)
                     ? Border(
                         right: BorderSide(
                             color: color, width: 2, style: BorderStyle.solid))
@@ -172,7 +171,7 @@ class _ImageMessageState extends State<ImageMessage> {
               padding: widget.snapshot.get('RepliedTo')[1] != ''
                   ? EdgeInsets.only(top: 10, bottom: 10)
                   : EdgeInsets.zero,
-              margin: (widget.snapshot.get("Sender") == Constants.userName)
+              margin: (widget.snapshot.get("Sender") == Constants.uid)
                   ? EdgeInsets.only(right: 10)
                   : EdgeInsets.only(left: 10),
               decoration: BoxDecoration(
@@ -201,7 +200,7 @@ class _ImageMessageState extends State<ImageMessage> {
                               width: 70,
                               height: 60,
                               child: (widget.snapshot.get("RepliedTo")[0] ==
-                                      Constants.userName)
+                                      Constants.uid)
                                   ? ClipRRect(
                                       borderRadius:
                                           BorderRadius.all(Radius.circular(15)),
@@ -237,13 +236,13 @@ class _ImageMessageState extends State<ImageMessage> {
     if (repliedTo.isEmpty) {
       return '';
     }
-    if (Constants.userName == widget.snapshot.get('Sender')) {
-      if (widget.snapshot.get('RepliedTo')[0] == Constants.userName) {
+    if (Constants.uid == widget.snapshot.get('Sender')) {
+      if (widget.snapshot.get('RepliedTo')[0] == Constants.uid) {
         return 'Replied to yourself';
       }
       return 'Replied to them';
     }
-    if (widget.snapshot.get('RepliedTo')[0] == Constants.userName) {
+    if (widget.snapshot.get('RepliedTo')[0] == Constants.uid) {
       return 'Replied to you';
     }
     return 'Replied to themselves';
@@ -285,79 +284,81 @@ class _ImageMessageState extends State<ImageMessage> {
     ));
   }
 
-  Widget postDownload() {
-    try {
-      return Image.file(
-        File(widget.snapshot.get("FilePath2")),
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) {
-          return preDownload();
-        },
-      );
-    } catch (e) {
-      return preDownload();
-    }
-  }
+  // Widget postDownload() {
+  //   try {
+  //     return Image.file(
+  //       File(widget.snapshot.get("FilePath2")),
+  //       fit: BoxFit.cover,
+  //       errorBuilder: (context, error, stackTrace) {
+  //         return preDownload();
+  //       },
+  //     );
+  //   } catch (e) {
+  //     return preDownload();
+  //   }
+  // }
 
-  Widget preDownload() {
-    return Container(
-        child: Stack(
-      fit: StackFit.expand,
-      alignment: Alignment.center,
-      children: [
-        ImageFiltered(
-            imageFilter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: netWorkImage(false)),
-        Container(
-          alignment: Alignment.center,
-          child: Container(
-            width: 90,
-            height: 90,
-            child: CircularProgressIndicator(
-              value: (downloadingprogress > 0.0 && downloadingprogress < 1.0)
-                  ? downloadingprogress
-                  : 0,
-              strokeWidth: 1.5,
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-            ),
-          ),
-        ),
-        Container(
-          alignment: Alignment.center,
-          child: Container(
-            width: 90,
-            height: 90,
-            child: FlatButton(
-              shape: CircleBorder(),
-              height: 50,
-              onPressed: () {
-                downloadFile();
-                setState(() {
-                  downloadingprogress = 0;
-                });
-              },
-              child: downloadingprogress > 0 && downloadingprogress < 1
-                  ? (downloadingprogress == 1
-                      ? Container()
-                      : Container(
-                          child: Text(
-                            ((downloadingprogress * 100).toInt()).toString() +
-                                "%",
-                            style: TextStyle(color: Colors.white),
-                          ),
-                        ))
-                  : Icon(
-                      Icons.download_sharp,
-                      color: Colors.white,
-                    ),
-            ),
-          ),
-        ),
-      ],
-    ));
-  }
+  // Widget preDownload() {
+  //   return Container(
+  //       child: Stack(
+  //     fit: StackFit.expand,
+  //     alignment: Alignment.center,
+  //     children: [
+  //       ImageFiltered(
+  //           imageFilter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+  //           child: networkImage(false)),
+  //       Container(
+  //         alignment: Alignment.center,
+  //         child: Container(
+  //           width: 90,
+  //           height: 90,
+  //           child: CircularProgressIndicator(
+  //             value: (downloadingprogress > 0.0 && downloadingprogress < 1.0)
+  //                 ? downloadingprogress
+  //                 : 0,
+  //             strokeWidth: 1.5,
+  //             valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+  //           ),
+  //         ),
+  //       ),
+  //       Container(
+  //         alignment: Alignment.center,
+  //         child: Container(
+  //           width: 90,
+  //           height: 90,
+  //           child: TextButton(
+  //             style: ButtonStyle(
+  //               shape: MaterialStateProperty.all(CircleBorder()),
+  //               minimumSize: MaterialStateProperty.all(Size(50, 50)),
+  //             ),
+  //             onPressed: () {
+  //               _requestDownload();
+  //               setState(() {
+  //                 downloadingprogress = 0;
+  //               });
+  //             },
+  //             child: downloadingprogress > 0 && downloadingprogress < 1
+  //                 ? (downloadingprogress == 1
+  //                     ? Container()
+  //                     : Container(
+  //                         child: Text(
+  //                           ((downloadingprogress * 100).toInt()).toString() +
+  //                               "%",
+  //                           style: TextStyle(color: Colors.white),
+  //                         ),
+  //                       ))
+  //                 : Icon(
+  //                     Icons.download_sharp,
+  //                     color: Colors.white,
+  //                   ),
+  //           ),
+  //         ),
+  //       ),
+  //     ],
+  //   ));
+  // }
 
-  Widget netWorkImage(bool needLoader) {
+  Widget networkImage(bool needLoader) {
     return Image.network(
       widget.snapshot.get("ImageURL"),
       fit: BoxFit.cover,
@@ -382,49 +383,28 @@ class _ImageMessageState extends State<ImageMessage> {
     );
   }
 
-  Future<void> downloadImage() async {
-    Dio dio = Dio();
-    PermissionStatus check = await Permission.storage.status;
-    if (!check.isGranted) {
-      check = await Permission.storage.request();
-    }
-    String dirloc = "";
-    dirloc = (await getApplicationDocumentsDirectory()).path;
-    var randid = Random().nextInt(10000);
-    try {
-      FileUtils.mkdir([dirloc]);
-      await dio.download((widget.snapshot.get("ImageURL")),
-          dirloc + randid.toString() + ".jpg",
-          onReceiveProgress: (receivedBytes, totalBytes) {
-        setState(() {
-          downloadingprogress = receivedBytes / totalBytes;
-          print(downloadingprogress);
-        });
-      });
-    } catch (e) {
-      print(e);
-    }
-
-    setState(() {
-      path = dirloc + randid.toString() + ".jpg";
-      widget.snapshot.reference.update({
-        "FilePath2": path,
-      });
-    });
+  Future<String> _findLocalPath() async {
+    final directory = await getExternalStorageDirectory();
+    return directory.path;
   }
 
-  downloadFile() {
-    setState(() {
-      if (!(widget.snapshot.get("Sender") == Constants.userName) &&
-          widget.snapshot.get("ImageURL") != '') {
-        downloadImage();
+  Future<bool> _checkPermission() async {
+    final status = await Permission.storage.status;
+    if (status != PermissionStatus.granted) {
+      final result = await Permission.storage.request();
+      if (result == PermissionStatus.granted) {
+        return true;
       }
-    });
+    } else {
+      return true;
+    }
+
+    return false;
   }
 
   uploadFile() {
     setState(() {
-      if ((widget.snapshot.get("Sender") == Constants.userName) &&
+      if ((widget.snapshot.get("Sender") == Constants.uid) &&
           widget.snapshot.get("ImageURL") == '') {
         uploadImage(widget.snapshot.get('FilePath1'));
       }
@@ -433,7 +413,7 @@ class _ImageMessageState extends State<ImageMessage> {
 
   uploadImage(String filePath) async {
     Reference reference = FirebaseStorage.instance.ref().child(
-        "${widget.chatRoomID}/${Constants.userName}/images/${Path.basename(filePath)}");
+        "${widget.chatRoomID}/${Constants.uid}/images/${Path.basename(filePath)}");
     UploadTask uploadTask = reference.putFile(File(filePath));
     uploadTask.snapshotEvents.listen((event) {
       setState(() {

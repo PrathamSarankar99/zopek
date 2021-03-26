@@ -1,18 +1,17 @@
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:page_transition/page_transition.dart';
-import 'package:path/path.dart' as Path;
 import 'package:scroll_to_index/scroll_to_index.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:swipe_to/swipe_to.dart';
+import 'package:zopek/Screens/ChatScreens/Capture.dart';
 import 'package:zopek/Screens/ChatScreens/PasswordView.dart';
 import 'package:zopek/Screens/HomeScreens/Homepage.dart';
-import 'package:zopek/Services/Constants.dart';
+import 'package:zopek/Modals/Camera.dart';
+import 'package:zopek/Modals/Constants.dart';
 import 'package:zopek/Services/database.dart';
 import 'dart:math' as math;
 import 'package:zopek/Widgets/ChatScreenWidgets/ImageMessage.dart';
@@ -33,7 +32,6 @@ class Message {
 }
 
 class _ChatsState extends State<Chats> {
-  PickedFile imagefile;
   TextEditingController messageController = new TextEditingController();
   FocusNode messageFocusNode;
   List<bool> isSelected = [];
@@ -382,7 +380,7 @@ class _ChatsState extends State<Chats> {
           "FilePath1": filePath,
           "FilePath2": '',
           "Time": DateTime.now(),
-          "Sender": Constants.userName,
+          "Sender": Constants.uid,
           "Message": Message.message.trim(),
           "Visible": visible,
           "RepliedTo": repliedTo,
@@ -427,7 +425,7 @@ class _ChatsState extends State<Chats> {
     }
     String imageURL = chatRoomSnapshot.data.docs[index].get("ImageURL");
     bool byme =
-        chatRoomSnapshot.data.docs[index].get("Sender") == Constants.userName;
+        chatRoomSnapshot.data.docs[index].get("Sender") == Constants.uid;
 
     String message = chatRoomSnapshot.data.docs[index].get("Message");
     Timestamp timestamp = chatRoomSnapshot.data.docs[index].get("Time");
@@ -536,21 +534,17 @@ class _ChatsState extends State<Chats> {
   }
 
   Future sendImageMessage() async {
-    ImagePicker imagePicker = new ImagePicker();
-    PickedFile imageFile = await imagePicker.getImage(
-      imageQuality: 40,
-      source: ImageSource.camera,
-    );
+    String path = await Navigator.push(
+        context,
+        PageTransition(
+            child: Capture(
+              cameraDescriptions: CameraConfigurations.cameraDescriptionList,
+            ),
+            type: PageTransitionType.fade));
 
-    sendMessage(imageFile.path);
-
-    // Reference reference = FirebaseStorage.instance.ref().child(
-    //     "${widget.chatRoomID}/${Constants.userName}/images/${Path.basename(imageFile.path)}");
-    // UploadTask uploadTask = reference.putFile(File(imageFile.path));
-    // uploadTask.snapshotEvents.listen((event) {});
-    // TaskSnapshot taskSnapshot = await uploadTask.whenComplete(() async {
-    //   String downloadURL = await reference.getDownloadURL();
-    // });
+    if (path != null && path.isNotEmpty) {
+      sendMessage(path);
+    }
   }
 
   Future _scrollToIndex(
@@ -616,7 +610,7 @@ class _ChatsState extends State<Chats> {
                   return AlertDialog(
                     title: Text("Are you sure?"),
                     actions: [
-                      FlatButton(
+                      TextButton(
                         onPressed: () async {
                           Navigator.pop(context);
                           print(isSelected.toString());
@@ -637,7 +631,7 @@ class _ChatsState extends State<Chats> {
                         },
                         child: Text("Delete"),
                       ),
-                      FlatButton(
+                      TextButton(
                         onPressed: () => Navigator.pop(context),
                         child: Text("Cancel"),
                       ),
@@ -709,7 +703,7 @@ class _ChatsState extends State<Chats> {
                     context,
                     MaterialPageRoute(
                         builder: (context) => PasswordView(
-                              password: password,
+                              password: password == null ? false : password,
                             ))).then((value) {
                   setState(() {
                     print("The value is : $value");
@@ -822,7 +816,7 @@ class _ChatsState extends State<Chats> {
                   ],
                 ))
           ];
-          if (isInconito) {
+          if (isInconito != null && isInconito) {
             menuitems.insert(
               2,
               PopupMenuItem(

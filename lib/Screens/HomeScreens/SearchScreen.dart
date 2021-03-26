@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:zopek/Services/Constants.dart';
+import 'package:zopek/Modals/Constants.dart';
 import 'package:zopek/Services/Utils.dart';
 import 'package:zopek/Services/database.dart';
 import 'package:zopek/Screens/ChatScreens/ChatsView.dart';
