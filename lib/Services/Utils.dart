@@ -1,13 +1,15 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 class Utils {
-  Map<String, dynamic> mapForAuth(
+  Future<Map<String, dynamic>> mapForAuth(
       String username,
       String fullName,
       String email,
       String photoURL,
       String phoneNo,
-      List<String> searchKeywords) {
+      List<String> searchKeywords) async{
+    List<String> token = [await FirebaseMessaging.instance.getToken()];         
     return {
       "UserName": username,
       "FullName": fullName,
@@ -17,6 +19,7 @@ class Utils {
       "SearchKeywords": searchKeywords,
       "Password": '',
       "Bio": '',
+      "MessagingTokens":token,
     };
   }
 

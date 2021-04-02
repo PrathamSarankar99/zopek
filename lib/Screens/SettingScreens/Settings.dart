@@ -11,6 +11,7 @@ import 'package:zopek/Modals/Camera.dart';
 import 'package:zopek/Modals/Constants.dart';
 import 'package:zopek/Modals/ImageSource.dart';
 import 'package:zopek/Screens/ChatScreens/Capture.dart';
+import 'package:zopek/Services/auth.dart';
 import 'package:zopek/Services/database.dart';
 import 'package:zopek/Screens/AuthScreens/Signin.dart';
 
@@ -36,8 +37,7 @@ class _SettingsPageState extends State<SettingsPage> {
             PopupMenuButton(
               onSelected: (value) async {
                 if (value == 'logout') {
-                  await FirebaseAuth.instance.signOut();
-                  await GoogleSignIn().signOut();
+                  await AuthServices().signOut();
                   Navigator.of(context).popUntil((route) => route.isFirst);
                   Navigator.of(context).pushReplacement(PageTransition(
                       child: SignIn(), type: PageTransitionType.fade));

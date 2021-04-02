@@ -53,7 +53,7 @@ dependencies:
   video_player: any
   firebase_messaging: ^9.0.1
   flutter_local_notifications: ^5.0.0
-
+  http:
 
 dev_dependencies:
   flutter_test:

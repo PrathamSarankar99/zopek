@@ -5,6 +5,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:zopek/Screens/AuthScreens/Signin.dart';
 import 'package:zopek/Modals/Constants.dart';
+import 'package:zopek/Services/auth.dart';
 import 'package:zopek/Services/database.dart';
 
 class PasswordView extends StatefulWidget {
@@ -173,9 +174,7 @@ class _PasswordViewState extends State<PasswordView> {
                                                       dataBaseServices
                                                           .setPassword('',
                                                               Constants.uid);
-                                                      FirebaseAuth.instance
-                                                          .signOut();
-                                                      GoogleSignIn().signOut();
+                                                      AuthServices().signOut();
                                                       Navigator.pushReplacement(
                                                           context,
                                                           PageTransition(

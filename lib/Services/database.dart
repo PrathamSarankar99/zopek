@@ -8,6 +8,30 @@ class DataBaseServices {
     FirebaseFirestore.instance.collection("Users").doc(uid).set(map);
   }
 
+  addMessagingTokens(String token, String uid)async {
+     List<dynamic> existingTokens =[];
+     await FirebaseFirestore.instance.collection("Users").doc(uid).get().then((value) async{
+        existingTokens= value.get("MessagingTokens");
+     });
+     if(existingTokens.contains(token)){
+       return;
+     }
+     existingTokens.add(token);
+     FirebaseFirestore.instance.collection("Users").doc(uid).update({
+       "MessagingTokens":existingTokens,
+     });
+  }
+  removeMessagingTokens(String token, String uid)async {
+     List<dynamic> existingTokens =[];
+     await FirebaseFirestore.instance.collection("Users").doc(uid).get().then((value) async{
+        existingTokens= value.get("MessagingTokens");
+     });
+     existingTokens.removeWhere((element) => element==token);
+     FirebaseFirestore.instance.collection("Users").doc(uid).update({
+       "MessagingTokens":existingTokens,
+     });
+  }
+
   Future getUserBySearchText(String searchText) async {
     return await FirebaseFirestore.instance
         .collection("Users")

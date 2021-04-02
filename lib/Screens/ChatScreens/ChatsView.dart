@@ -7,6 +7,7 @@ import 'package:page_transition/page_transition.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:swipe_to/swipe_to.dart';
+import 'package:zopek/Screens/ChatScreens/AboutView.dart';
 import 'package:zopek/Screens/ChatScreens/Capture.dart';
 import 'package:zopek/Screens/ChatScreens/PasswordView.dart';
 import 'package:zopek/Screens/HomeScreens/Homepage.dart';
@@ -41,10 +42,14 @@ class _ChatsState extends State<Chats> {
   DataBaseServices dbs = new DataBaseServices();
   AutoScrollController _autoScrollController = new AutoScrollController();
   QueryDocumentSnapshot _queryDocumentSnapshot;
+  TextStyle popupMenuTextStyle;
   bool isInconito = false;
   @override
   void initState() {
     super.initState();
+    popupMenuTextStyle = new TextStyle(
+      fontSize: 15,
+    );
     isInconito = widget.incognito;
     populateSelection().then((value) {
       setState(() {
@@ -74,7 +79,7 @@ class _ChatsState extends State<Chats> {
     print("Chat page is building");
     print("Are you incognito? $isInconito");
     return Scaffold(
-      backgroundColor: Colors.black.withBlue(40),
+      backgroundColor: Colors.white,
       body: WillPopScope(
         onWillPop: () {
           Navigator.pushReplacement(
@@ -104,43 +109,60 @@ class _ChatsState extends State<Chats> {
                   }),
             ),
             Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(20),
-                      topRight: Radius.circular(20),
-                    )),
-                width: MediaQuery.of(context).size.width,
-                child: StreamBuilder<QuerySnapshot>(
-                    stream: isInconito == null
-                        ? dbs.getChatRoomStreamOfMessagesExHidden(
-                            widget.chatRoomID, Constants.uid)
-                        : (isInconito
-                            ? dbs.getChatRoomStreamOfMessages(
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Container(
+                    color: Colors.black.withBlue(40),
+                  ),
+                  //Widget defining background of the.
+                  Container(
+                    decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(20),
+                          topRight: Radius.circular(20),
+                        )),
+                  ),
+                  Container(
+                    decoration: BoxDecoration(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(20),
+                          topRight: Radius.circular(20),
+                        )),
+                    width: MediaQuery.of(context).size.width,
+                    child: StreamBuilder<QuerySnapshot>(
+                        stream: isInconito == null
+                            ? dbs.getChatRoomStreamOfMessagesExHidden(
                                 widget.chatRoomID, Constants.uid)
-                            : dbs.getChatRoomStreamOfMessagesExHidden(
-                                widget.chatRoomID, Constants.uid)),
-                    builder: (context, chatRoomSnapshot) {
-                      if (!chatRoomSnapshot.hasData) {
-                        return Container();
-                      }
-
-                      return ListView.separated(
-                          shrinkWrap: true,
-                          reverse: true,
-                          controller: _autoScrollController,
-                          physics: ClampingScrollPhysics(),
-                          padding: EdgeInsets.only(top: 5, bottom: 0),
-                          itemCount: chatRoomSnapshot.data.docs.length,
-                          separatorBuilder: (context, index) {
+                            : (isInconito
+                                ? dbs.getChatRoomStreamOfMessages(
+                                    widget.chatRoomID, Constants.uid)
+                                : dbs.getChatRoomStreamOfMessagesExHidden(
+                                    widget.chatRoomID, Constants.uid)),
+                        builder: (context, chatRoomSnapshot) {
+                          if (!chatRoomSnapshot.hasData) {
                             return Container();
-                          },
-                          itemBuilder: (context, index) {
-                            print("Getting message $index");
-                            return messageTile(index, chatRoomSnapshot);
-                          });
-                    }),
+                          }
+
+                          return ListView.separated(
+                              shrinkWrap: true,
+                              reverse: true,
+                              controller: _autoScrollController,
+                              physics: ClampingScrollPhysics(),
+                              padding: EdgeInsets.only(top: 5, bottom: 0),
+                              itemCount: chatRoomSnapshot.data.docs.length,
+                              separatorBuilder: (context, index) {
+                                return Container();
+                              },
+                              itemBuilder: (context, index) {
+                                print("Getting message $index");
+                                return messageTile(index, chatRoomSnapshot);
+                              });
+                        }),
+                  ),
+                ],
               ),
             ),
             Container(
@@ -321,11 +343,13 @@ class _ChatsState extends State<Chats> {
                             ),
                           ),
                           Positioned(
-                            right: -20,
+                            right: 0,
                             bottom: 0,
-                            child: FlatButton(
-                                height: 50,
-                                shape: CircleBorder(),
+                            child: TextButton(
+                                style: ButtonStyle(
+                                  minimumSize: MaterialStateProperty.all(Size(50,50)),
+                                  shape: MaterialStateProperty.all(CircleBorder()),
+                                ),
                                 onPressed: () {
                                   if (messageController.text != "") {
                                     messageController.clear();
@@ -335,6 +359,7 @@ class _ChatsState extends State<Chats> {
                                 child: Padding(
                                   padding: const EdgeInsets.only(
                                     bottom: 8.0,
+                                    left:5,
                                   ),
                                   child: Transform.rotate(
                                       angle: math.pi / 0.55,
@@ -381,6 +406,7 @@ class _ChatsState extends State<Chats> {
           "FilePath2": '',
           "Time": DateTime.now(),
           "Sender": Constants.uid,
+          "Reciever": widget.uid,
           "Message": Message.message.trim(),
           "Visible": visible,
           "RepliedTo": repliedTo,
@@ -405,7 +431,7 @@ class _ChatsState extends State<Chats> {
   }
 
   Future getUserInfo() async {
-    Stream<DocumentSnapshot> snap = await dbs.getUserByID(widget.uid);
+    Stream<DocumentSnapshot> snap = dbs.getUserByID(widget.uid);
     await snap.first.then((value) {
       setState(() {
         photoURL = value.get("PhotoURL");
@@ -740,6 +766,13 @@ class _ChatsState extends State<Chats> {
                 isSelected[i] = false;
               }
             }
+            if(code=='about'){
+              Navigator.push(context, PageTransition(
+                duration: Duration(seconds: 1),
+                curve: Curves.decelerate,
+                alignment: Alignment.topRight,
+                child: About(uid: widget.uid,), type: PageTransitionType.scale ),);
+            }
           });
         },
         child: Padding(
@@ -752,7 +785,7 @@ class _ChatsState extends State<Chats> {
         itemBuilder: (context) {
           var menuitems = [
             PopupMenuItem(
-              height: 35,
+              height: 45,
               textStyle: TextStyle(
                 fontSize: 15,
                 color: Colors.black,
@@ -773,7 +806,7 @@ class _ChatsState extends State<Chats> {
                   ),
                   Text(getSelectedno() == isSelected.length
                       ? "Deselect All"
-                      : "Select All"),
+                      : "Select All",style:popupMenuTextStyle ),
                 ],
               ),
               value: getSelectedno() == isSelected.length
@@ -783,7 +816,7 @@ class _ChatsState extends State<Chats> {
             PopupMenuItem(
                 value: "hide",
                 enabled: !(getSelectedno() == 0),
-                height: 35,
+                height: 45,
                 textStyle: TextStyle(
                   fontSize: 15,
                   color: Colors.black,
@@ -800,21 +833,55 @@ class _ChatsState extends State<Chats> {
                     SizedBox(
                       width: 5,
                     ),
-                    Text("Hide"),
+                    Text("Hide",style:popupMenuTextStyle ),
                   ],
                 )),
             PopupMenuItem(
                 value: 'incognito',
-                height: 35,
+                height: 45,
                 child: Row(
                   children: [
                     SvgPicture.asset('assets/incognito.svg'),
                     SizedBox(
                       width: 5,
                     ),
-                    Text('Incognito')
+                    Text('Incognito',style:popupMenuTextStyle )
                   ],
-                ))
+                )),
+            PopupMenuItem(
+                value: "wallpaper",
+                height: 45,
+                textStyle: TextStyle(
+                  fontSize: 15,
+                  color: Colors.black,
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                        height: 25,
+                        width: 25,
+                        child: Image.asset("assets/wallpaper.png")),
+                    SizedBox(
+                      width: 5,
+                    ),
+                    Text("Wallpaper",style:popupMenuTextStyle ),
+                  ],
+                )),
+            PopupMenuItem(
+                value: 'about',
+                height: 45,
+                child: Row(
+                  children: [
+                    Transform.rotate(
+                      angle: math.pi,
+                      child: Icon(Icons.error_outline)),
+                    SizedBox(
+                      width: 5,
+                    ),
+                    Text('About',style:popupMenuTextStyle )
+                  ],
+                )),
+
           ];
           if (isInconito != null && isInconito) {
             menuitems.insert(
@@ -826,14 +893,14 @@ class _ChatsState extends State<Chats> {
                     color: Colors.black,
                   ),
                   enabled: !(getSelectedno() == 0),
-                  height: 35,
+                  height: 45,
                   child: Row(
                     children: [
                       Icon(Icons.remove_red_eye, color: Colors.blue),
                       SizedBox(
                         width: 5,
                       ),
-                      Text("Unhide"),
+                      Text("Unhide",style:popupMenuTextStyle ),
                     ],
                   )),
             );
@@ -847,53 +914,65 @@ class _ChatsState extends State<Chats> {
   }
 
   Widget profileHeader(AsyncSnapshot<QuerySnapshot> chatRoomSnapshot) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.start,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: <Widget>[
-        IconButton(
-          icon: Icon(Icons.arrow_back),
-          color: Color.fromRGBO(228, 227, 227, 1),
-          onPressed: () {
-            Navigator.pushReplacement(
-                context, MaterialPageRoute(builder: (context) => Homepage()));
-          },
-        ),
-        CircleAvatar(
-          backgroundColor: Colors.grey,
-          backgroundImage: photoURL.isNotEmpty ? NetworkImage(photoURL) : null,
-        ),
-        SizedBox(
-          width: 10,
-        ),
-        Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Wrap(
-              children: [
-                Text(
-                  username,
-                  style: TextStyle(
-                    color: Color.fromRGBO(228, 227, 227, 1),
-                    //rgb(228,227,227)
-                    fontSize: 20,
+    return GestureDetector(
+      onTap: (){
+        Navigator.push(context,  PageTransition(
+          alignment: Alignment.topCenter,
+          duration: Duration(
+            milliseconds: 300,
+          ),
+          child: About(
+            uid: widget.uid,
+          ), type:  PageTransitionType.fade ) );
+      },
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: <Widget>[
+          IconButton(
+            icon: Icon(Icons.arrow_back),
+            color: Color.fromRGBO(228, 227, 227, 1),
+            onPressed: () {
+              Navigator.pushReplacement(
+                  context, MaterialPageRoute(builder: (context) => Homepage()));
+            },
+          ),
+          CircleAvatar(
+            backgroundColor: Colors.grey,
+            backgroundImage: photoURL.isNotEmpty ? NetworkImage(photoURL) : null,
+          ),
+          SizedBox(
+            width: 10,
+          ),
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Wrap(
+                children: [
+                  Text(
+                    username,
+                    style: TextStyle(
+                      color: Color.fromRGBO(228, 227, 227, 1),
+                      //rgb(228,227,227)
+                      fontSize: 20,
+                    ),
                   ),
-                ),
-              ],
-            ),
-            Text(
-              email,
-              style: TextStyle(
-                color: Color.fromRGBO(228, 227, 227, 1),
-                fontSize: 10,
+                ],
               ),
-            ),
-          ],
-        ),
-        Spacer(),
-        popupMenuButton(chatRoomSnapshot),
-      ],
+              Text(
+                email,
+                style: TextStyle(
+                  color: Color.fromRGBO(228, 227, 227, 1),
+                  fontSize: 10,
+                ),
+              ),
+            ],
+          ),
+          Spacer(),
+          popupMenuButton(chatRoomSnapshot),
+        ],
+      ),
     );
   }
 }

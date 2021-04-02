@@ -674,73 +674,56 @@ class _HomepageState extends State<Homepage> {
     if (this.isSelected.isEmpty || this.isSelected.length <= index) {
       return Container();
     }
-    return Column(
-      children: [
-        ListTile(
-            hoverColor: Colors.black,
-            selectedTileColor: Colors.cyan.withOpacity(0.2),
-            selected: this.isSelected.isEmpty || this.isSelected.length <= index
-                ? false
-                : this.isSelected[index],
-            onLongPress: () {
-              setState(() {
-                if (this.isSelected.contains(false)) {
-                  this.isSelected[index] = !this.isSelected[index];
-                }
-              });
-            },
-            onTap: () {
-              setState(() {
-                if (this.isSelected.contains(true)) {
-                  this.isSelected[index] = !this.isSelected[index];
-                  return;
-                }
-                Navigator.pushReplacement(
-                    context,
-                    PageTransition(
-                        child: Chats(
-                          incognito: false,
-                          chatRoomID: utils.getChatRoomID(
-                              Constants.uid, userSnapshot.data.id),
-                          uid: userSnapshot.data.id,
-                        ),
-                        type: PageTransitionType.fade,
-                        duration: Duration(milliseconds: 300)));
-              });
-            },
-            title: Row(
-              children: [
-                Text(
-                  userSnapshot.data.get('UserName'),
-                  style: TextStyle(
-                    fontSize: 20,
-                    color: Colors.black,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-              ],
+    return ListTile(
+      
+        selectedTileColor: Colors.cyan.withOpacity(0.2),
+        selected: this.isSelected.isEmpty || this.isSelected.length <= index
+            ? false
+            : this.isSelected[index],
+        onLongPress: () {
+          setState(() {
+            if (this.isSelected.contains(false)) {
+              this.isSelected[index] = !this.isSelected[index];
+            }
+          });
+        },
+        onTap: () {
+          setState(() {
+            if (this.isSelected.contains(true)) {
+              this.isSelected[index] = !this.isSelected[index];
+              return;
+            }
+            Navigator.pushReplacement(
+                context,
+                PageTransition(
+                    child: Chats(
+                      incognito: false,
+                      chatRoomID: utils.getChatRoomID(
+                          Constants.uid, userSnapshot.data.id),
+                      uid: userSnapshot.data.id,
+                    ),
+                    type: PageTransitionType.fade,
+                    duration: Duration(milliseconds: 300)));
+          });
+        },
+        title: Row(
+          children: [
+            Text(
+              userSnapshot.data.get('UserName'),
+              style: TextStyle(
+                fontSize: 20,
+                color: Colors.black,
+                fontWeight: FontWeight.w400,
+              ),
             ),
-            leading: this.isSelected[index]
-                ? Stack(
-                    alignment: Alignment.bottomRight,
-                    clipBehavior: Clip.hardEdge,
-                    children: [
-                      Container(
-                        width: 50,
-                        height: 50,
-                        child: CircleAvatar(
-                          backgroundImage:
-                              NetworkImage(userSnapshot.data.get("PhotoURL")),
-                        ),
-                      ),
-                      Container(
-                        width: 20,
-                        height: 20,
-                        child: Image.asset("assets/tick.png"),
-                      ),
-                    ],
-                  )
-                : Container(
+          ],
+        ),
+        leading: this.isSelected[index]
+            ? Stack(
+                alignment: Alignment.bottomRight,
+                clipBehavior: Clip.hardEdge,
+                children: [
+                  Container(
                     width: 50,
                     height: 50,
                     child: CircleAvatar(
@@ -748,40 +731,50 @@ class _HomepageState extends State<Homepage> {
                           NetworkImage(userSnapshot.data.get("PhotoURL")),
                     ),
                   ),
-            subtitle: (!lastMessageSnapshot.hasData ||
-                    lastMessageSnapshot.data.docs.isEmpty)
-                ? Container()
-                : Padding(
-                    padding: const EdgeInsets.only(top: 5),
-                    child: lastMessageSnapshot.data.docs[0].get("Message") == ""
-                        ? (lastMessageSnapshot.data.docs[0].get("ImageURL") ==
-                                null
-                            ? Row()
-                            : Row(
-                                children: [
-                                  Icon(
-                                    Icons.photo,
-                                    size: 15,
-                                    color: Colors.black.withBlue(40),
-                                  ),
-                                  Text("Photo"),
-                                ],
-                              ))
-                        : Text(
-                            lastMessageSnapshot.data.docs[0].get("Message"),
-                            maxLines: 2,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.black,
-                              fontWeight: FontWeight.w300,
-                            ),
-                          ),
-                  )),
-        SizedBox(
-          height: 0.5,
-        ),
-      ],
-    );
+                  Container(
+                    width: 20,
+                    height: 20,
+                    child: Image.asset("assets/tick.png"),
+                  ),
+                ],
+              )
+            : Container(
+                width: 50,
+                height: 50,
+                child: CircleAvatar(
+                  backgroundImage:
+                      NetworkImage(userSnapshot.data.get("PhotoURL")),
+                ),
+              ),
+        subtitle: (!lastMessageSnapshot.hasData ||
+                lastMessageSnapshot.data.docs.isEmpty)
+            ? Container()
+            : Padding(
+                padding: const EdgeInsets.only(top: 5),
+                child: lastMessageSnapshot.data.docs[0].get("Message") == ""
+                    ? (lastMessageSnapshot.data.docs[0].get("ImageURL") ==
+                            null
+                        ? Row()
+                        : Row(
+                            children: [
+                              Icon(
+                                Icons.photo,
+                                size: 15,
+                                color: Colors.black.withBlue(40),
+                              ),
+                              Text("Photo"),
+                            ],
+                          ))
+                    : Text(
+                        lastMessageSnapshot.data.docs[0].get("Message"),
+                        maxLines: 2,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.black,
+                          fontWeight: FontWeight.w300,
+                        ),
+                      ),
+              ));
   }
 
   int getSelectedno() {
