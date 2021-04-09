@@ -18,98 +18,113 @@ class DataBaseServices {
   uploadUserInfo(Map<String, dynamic> map, String uid) {
     FirebaseFirestore.instance.collection("Users").doc(uid).set(map);
   }
-  
-  Future<List<dynamic>> getWallpapers(String chatRoomID)async{
-    DocumentSnapshot snap = await FirebaseFirestore.instance.collection("ChatRooms").doc(chatRoomID).get();
+
+  Future<List<dynamic>> getWallpapers(String chatRoomID) async {
+    DocumentSnapshot snap = await FirebaseFirestore.instance
+        .collection("ChatRooms")
+        .doc(chatRoomID)
+        .get();
     return snap.get("Wallpapers");
   }
 
-  removeWallpaper(String chatRoomID,int index)async{
-    DocumentSnapshot snap = await FirebaseFirestore.instance.collection("ChatRooms").doc(chatRoomID).get();
+  removeWallpaper(String chatRoomID, int index) async {
+    DocumentSnapshot snap = await FirebaseFirestore.instance
+        .collection("ChatRooms")
+        .doc(chatRoomID)
+        .get();
     List<dynamic> list = snap.get("Wallpapers");
-    if(list.isEmpty){
-          return;
-    }    
+    if (list.isEmpty) {
+      return;
+    }
     list[index] = "";
     snap.reference.update({
-      "Wallpapers":list,
+      "Wallpapers": list,
     });
-
   }
 
-  Future<String> updateWallpaper(String chatRoomID, int index,ImageSource source,BuildContext context)async{
-    DocumentSnapshot snap = await FirebaseFirestore.instance.collection("ChatRooms").doc(chatRoomID).get();
+  Future<String> updateWallpaper(String chatRoomID, int index,
+      ImageSource source, BuildContext context) async {
+    DocumentSnapshot snap = await FirebaseFirestore.instance
+        .collection("ChatRooms")
+        .doc(chatRoomID)
+        .get();
     List<dynamic> list = snap.get("Wallpapers");
     String downloadURL = "";
-    switch (source){
+    switch (source) {
       case ImageSource.camera:
         {
           String path = await Navigator.push(
-          context,
-          PageTransition(
-              child: Capture(
-                  cameraDescriptions:
-                      CameraConfigurations.cameraDescriptionList),
-              type: PageTransitionType.fade));
-          Reference reference = FirebaseStorage.instance
-              .ref()
-              .child("$chatRoomID/${Constants.uid}/wallpaper/${basename(path)}");
+              context,
+              PageTransition(
+                  child: Capture(
+                      cameraDescriptions:
+                          CameraConfigurations.cameraDescriptionList),
+                  type: PageTransitionType.fade));
+          Reference reference = FirebaseStorage.instance.ref().child(
+              "$chatRoomID/${Constants.uid}/wallpaper/${basename(path)}");
           UploadTask uploadTask = reference.putFile(File(path));
           TaskSnapshot taskSnapshot = await uploadTask.whenComplete(() async {
             downloadURL = await reference.getDownloadURL();
             list[index] = downloadURL;
             snap.reference.update({
-              "Wallpapers":list,
+              "Wallpapers": list,
             });
-          });   
+          });
         }
         break;
       case ImageSource.gallery:
         {
-          List<Asset> imageFile =
-          await MultiImagePicker.pickImages(maxImages: 1, enableCamera: true);
-          String path = await FlutterAbsolutePath.getAbsolutePath(imageFile[0].identifier);
-           Reference reference = FirebaseStorage.instance
-              .ref()
-              .child("$chatRoomID/${Constants.uid}/wallpaper/${basename(path)}");
+          List<Asset> imageFile = await MultiImagePicker.pickImages(
+              maxImages: 1, enableCamera: true);
+          String path = await FlutterAbsolutePath.getAbsolutePath(
+              imageFile[0].identifier);
+          Reference reference = FirebaseStorage.instance.ref().child(
+              "$chatRoomID/${Constants.uid}/wallpaper/${basename(path)}");
           UploadTask uploadTask = reference.putFile(File(path));
           TaskSnapshot taskSnapshot = await uploadTask.whenComplete(() async {
             downloadURL = await reference.getDownloadURL();
             list[index] = downloadURL;
             snap.reference.update({
-              "Wallpapers":list,
+              "Wallpapers": list,
             });
-          });  
+          });
         }
         break;
     }
     return downloadURL;
   }
 
-
-
-  addMessagingTokens(String token, String uid)async {
-     List<dynamic> existingTokens =[];
-     await FirebaseFirestore.instance.collection("Users").doc(uid).get().then((value) async{
-        existingTokens= value.get("MessagingTokens");
-     });
-     if(existingTokens.contains(token)){
-       return;
-     }
-     existingTokens.add(token);
-     FirebaseFirestore.instance.collection("Users").doc(uid).update({
-       "MessagingTokens":existingTokens,
-     });
+  addMessagingTokens(String token, String uid) async {
+    List<dynamic> existingTokens = [];
+    await FirebaseFirestore.instance
+        .collection("Users")
+        .doc(uid)
+        .get()
+        .then((value) async {
+      existingTokens = value.get("MessagingTokens");
+    });
+    if (existingTokens.contains(token)) {
+      return;
+    }
+    existingTokens.add(token);
+    FirebaseFirestore.instance.collection("Users").doc(uid).update({
+      "MessagingTokens": existingTokens,
+    });
   }
-  removeMessagingTokens(String token, String uid)async {
-     List<dynamic> existingTokens =[];
-     await FirebaseFirestore.instance.collection("Users").doc(uid).get().then((value) async{
-        existingTokens= value.get("MessagingTokens");
-     });
-     existingTokens.removeWhere((element) => element==token);
-     FirebaseFirestore.instance.collection("Users").doc(uid).update({
-       "MessagingTokens":existingTokens,
-     });
+
+  removeMessagingTokens(String token, String uid) async {
+    List<dynamic> existingTokens = [];
+    await FirebaseFirestore.instance
+        .collection("Users")
+        .doc(uid)
+        .get()
+        .then((value) async {
+      existingTokens = value.get("MessagingTokens");
+    });
+    existingTokens.removeWhere((element) => element == token);
+    FirebaseFirestore.instance.collection("Users").doc(uid).update({
+      "MessagingTokens": existingTokens,
+    });
   }
 
   Future getUserBySearchText(String searchText) async {

@@ -1,9 +1,11 @@
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:page_transition/page_transition.dart';
+import 'package:path/path.dart' as Path;
 import 'package:scroll_to_index/scroll_to_index.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:swipe_to/swipe_to.dart';
@@ -60,7 +62,7 @@ class _ChatsState extends State<Chats> {
     isInconito = widget.incognito;
     populateSelection().then((value) {
       setState(() {
-        //print("$value has been returned");
+        print("The selected length is :${isSelected.length}");
       });
     });
     messageFocusNode = FocusNode();
@@ -101,312 +103,314 @@ class _ChatsState extends State<Chats> {
               context, MaterialPageRoute(builder: (context) => Homepage()));
           return;
         },
-        child: Column(
-          children: [
-            Container(
-              height: MediaQuery.of(context).size.height * 0.15,
-              width: MediaQuery.of(context).size.width,
-              color: Colors.black.withBlue(40),
-              child: StreamBuilder<QuerySnapshot>(
-                  stream: isInconito == null
-                      ? dbs.getChatRoomStreamOfMessagesExHidden(
-                          widget.chatRoomID, Constants.uid)
-                      : (isInconito
-                          ? dbs.getChatRoomStreamOfMessages(
-                              widget.chatRoomID, Constants.uid)
-                          : dbs.getChatRoomStreamOfMessagesExHidden(
-                              widget.chatRoomID, Constants.uid)),
-                  builder: (context, chatRoomSnapshot) {
-                    return SafeArea(
-                        child: isSelected.contains(true)
-                            ? toolingHeader(chatRoomSnapshot)
-                            : profileHeader(chatRoomSnapshot));
-                  }),
-            ),
-            Expanded(
-              child: Stack(
-                fit: StackFit.expand,
+        child: StreamBuilder<QuerySnapshot>(
+            stream: isInconito == null
+                ? dbs.getChatRoomStreamOfMessagesExHidden(
+                    widget.chatRoomID, Constants.uid)
+                : (isInconito
+                    ? dbs.getChatRoomStreamOfMessages(
+                        widget.chatRoomID, Constants.uid)
+                    : dbs.getChatRoomStreamOfMessagesExHidden(
+                        widget.chatRoomID, Constants.uid)),
+            builder: (context, chatRoomSnapshot) {
+              return Column(
                 children: [
                   Container(
-                    color: Colors.black.withBlue(40),
+                      height: MediaQuery.of(context).size.height * 0.15,
+                      width: MediaQuery.of(context).size.width,
+                      color: Colors.black.withBlue(40),
+                      child: SafeArea(
+                          child: isSelected.contains(true)
+                              ? toolingHeader(chatRoomSnapshot)
+                              : profileHeader(chatRoomSnapshot))),
+                  Expanded(
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        Container(
+                          color: Colors.black.withBlue(40),
+                        ),
+                        //Widget defining background of the chat.
+                        Container(
+                          decoration: BoxDecoration(
+                              color: Colors.white,
+                              image: wallpaper.isEmpty
+                                  ? null
+                                  : DecorationImage(
+                                      image: NetworkImage(wallpaper),
+                                      fit: BoxFit.cover),
+                              borderRadius: const BorderRadius.only(
+                                topLeft: Radius.circular(20),
+                                topRight: Radius.circular(20),
+                              )),
+                        ),
+                        Container(
+                            decoration: const BoxDecoration(
+                                color: Colors.transparent,
+                                borderRadius: BorderRadius.only(
+                                  topLeft: Radius.circular(20),
+                                  topRight: Radius.circular(20),
+                                )),
+                            width: MediaQuery.of(context).size.width,
+                            child: !chatRoomSnapshot.hasData
+                                ? Container()
+                                : ListView.separated(
+                                    shrinkWrap: true,
+                                    reverse: true,
+                                    controller: _autoScrollController,
+                                    physics: ClampingScrollPhysics(),
+                                    padding: const EdgeInsets.only(
+                                        top: 5, bottom: 0),
+                                    itemCount:
+                                        chatRoomSnapshot.data.docs.length,
+                                    separatorBuilder: (context, index) {
+                                      return Container();
+                                    },
+                                    itemBuilder: (context, index) {
+                                      print("Getting message $index");
+                                      return messageTile(
+                                          index, chatRoomSnapshot);
+                                    })),
+                      ],
+                    ),
                   ),
-                  //Widget defining background of the chat.
                   Container(
-                    decoration: BoxDecoration(
-                        color: Colors.white,
-                        image: wallpaper.isEmpty
-                            ? null
-                            : DecorationImage(
-                                image: NetworkImage(wallpaper),
-                                fit: BoxFit.cover),
-                        borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(20),
-                          topRight: Radius.circular(20),
-                        )),
-                  ),
-                  Container(
-                    decoration: BoxDecoration(
-                        color: Colors.transparent,
-                        borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(20),
-                          topRight: Radius.circular(20),
-                        )),
+                    alignment: Alignment.bottomLeft,
+                    color: Colors.white,
                     width: MediaQuery.of(context).size.width,
-                    child: StreamBuilder<QuerySnapshot>(
-                        stream: isInconito == null
-                            ? dbs.getChatRoomStreamOfMessagesExHidden(
-                                widget.chatRoomID, Constants.uid)
-                            : (isInconito
-                                ? dbs.getChatRoomStreamOfMessages(
-                                    widget.chatRoomID, Constants.uid)
-                                : dbs.getChatRoomStreamOfMessagesExHidden(
-                                    widget.chatRoomID, Constants.uid)),
-                        builder: (context, chatRoomSnapshot) {
-                          if (!chatRoomSnapshot.hasData) {
-                            return Container();
-                          }
-
-                          return ListView.separated(
-                              shrinkWrap: true,
-                              reverse: true,
-                              controller: _autoScrollController,
-                              physics: ClampingScrollPhysics(),
-                              padding: EdgeInsets.only(top: 5, bottom: 0),
-                              itemCount: chatRoomSnapshot.data.docs.length,
-                              separatorBuilder: (context, index) {
-                                return Container();
-                              },
-                              itemBuilder: (context, index) {
-                                print("Getting message $index");
-                                return messageTile(index, chatRoomSnapshot);
-                              });
-                        }),
-                  ),
-                ],
-              ),
-            ),
-            Container(
-              alignment: Alignment.bottomLeft,
-              color: Colors.white,
-              width: MediaQuery.of(context).size.width,
-              child: Container(
-                alignment: Alignment.bottomCenter,
-                padding: EdgeInsets.only(top: 3),
-                decoration: BoxDecoration(
-                  color: Color.fromRGBO(241, 245, 246, 1),
-                  //rgb(241,245,246)
-                  borderRadius: BorderRadius.all(Radius.circular(30)),
-                ),
-                margin: EdgeInsets.all(8),
-                child: Column(
-                  children: [
-                    Visibility(
-                      visible: _queryDocumentSnapshot != null,
-                      child: _queryDocumentSnapshot == null
-                          ? Container()
-                          : Container(
-                              height: 100,
-                              width: MediaQuery.of(context).size.width - 16,
-                              color: Colors.transparent,
-                              child: Container(
-                                padding: EdgeInsets.only(
-                                  top: 10,
-                                  left: 10,
-                                ),
-                                margin: EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: _queryDocumentSnapshot.get("Sender") ==
-                                          Constants.userName
-                                      ? Color.fromRGBO(23, 105, 164, 0.3)
-                                      : Colors.amber.withOpacity(0.5),
-                                  borderRadius: BorderRadius.only(
-                                    topLeft: Radius.circular(20),
-                                    topRight: Radius.circular(20),
-                                  ),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text(
-                                          _queryDocumentSnapshot
-                                                      .get("Sender") ==
-                                                  Constants.userName
-                                              ? "You"
-                                              : username,
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.w900,
-                                              fontSize: 20,
-                                              color: Colors.black
-                                                  .withBlue(40)
-                                                  .withOpacity(0.7)),
+                    child: Container(
+                      alignment: Alignment.bottomCenter,
+                      padding: const EdgeInsets.only(top: 3),
+                      decoration: const BoxDecoration(
+                        color: Color.fromRGBO(241, 245, 246, 1),
+                        //rgb(241,245,246)
+                        borderRadius: BorderRadius.all(Radius.circular(30)),
+                      ),
+                      margin: const EdgeInsets.all(8),
+                      child: Column(
+                        children: [
+                          Visibility(
+                            visible: _queryDocumentSnapshot != null,
+                            child: _queryDocumentSnapshot == null
+                                ? Container()
+                                : Container(
+                                    height: 100,
+                                    width:
+                                        MediaQuery.of(context).size.width - 16,
+                                    color: Colors.transparent,
+                                    child: Container(
+                                      padding: const EdgeInsets.only(
+                                        top: 10,
+                                        left: 10,
+                                      ),
+                                      margin: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: _queryDocumentSnapshot
+                                                    .get("Sender") ==
+                                                Constants.userName
+                                            ? Color.fromRGBO(23, 105, 164, 0.3)
+                                            : Colors.amber.withOpacity(0.5),
+                                        borderRadius: const BorderRadius.only(
+                                          topLeft: Radius.circular(20),
+                                          topRight: Radius.circular(20),
                                         ),
-                                        GestureDetector(
-                                          onTap: () {
-                                            setState(() {
-                                              _queryDocumentSnapshot = null;
-                                            });
-                                          },
-                                          child: Padding(
-                                            padding: EdgeInsets.only(
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Text(
+                                                _queryDocumentSnapshot
+                                                            .get("Sender") ==
+                                                        Constants.userName
+                                                    ? "You"
+                                                    : username,
+                                                style: TextStyle(
+                                                    fontWeight: FontWeight.w900,
+                                                    fontSize: 20,
+                                                    color: Colors.black
+                                                        .withBlue(40)
+                                                        .withOpacity(0.7)),
+                                              ),
+                                              GestureDetector(
+                                                onTap: () {
+                                                  setState(() {
+                                                    _queryDocumentSnapshot =
+                                                        null;
+                                                  });
+                                                },
+                                                child: Padding(
+                                                  padding:
+                                                      const EdgeInsets.only(
+                                                    right: 10,
+                                                  ),
+                                                  child: Icon(
+                                                    Icons.clear,
+                                                    size: 20,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                              top: 5,
                                               right: 10,
+                                              left: 5,
                                             ),
-                                            child: Icon(
-                                              Icons.clear,
-                                              size: 20,
+                                            child: Divider(
+                                              thickness: 1,
+                                              height: 0.2,
                                             ),
                                           ),
-                                        ),
-                                      ],
-                                    ),
-                                    Padding(
-                                      padding: EdgeInsets.only(
-                                        top: 5,
-                                        right: 10,
-                                        left: 5,
-                                      ),
-                                      child: Divider(
-                                        thickness: 1,
-                                        height: 0.2,
-                                      ),
-                                    ),
-                                    Container(
-                                      height: 40,
-                                      alignment: Alignment.centerLeft,
-                                      child: Padding(
-                                        padding: EdgeInsets.only(
-                                          left: 8,
-                                          top: 5,
-                                          right: 10,
-                                        ),
-                                        child: Container(
-                                          child: _queryDocumentSnapshot
-                                                      .get("Message") !=
-                                                  ""
-                                              ? Text(
-                                                  _queryDocumentSnapshot
-                                                      .get("Message"),
-                                                  maxLines: 3,
-                                                )
-                                              : Row(
-                                                  children: [
-                                                    Icon(
-                                                      Icons.photo,
-                                                      color: Colors.black
-                                                          .withBlue(40)
-                                                          .withOpacity(0.7),
-                                                    ),
-                                                    Text(
-                                                      "Photo",
-                                                      style: TextStyle(
-                                                          fontWeight:
-                                                              FontWeight.w200,
-                                                          fontSize: 17,
-                                                          color: Colors.black
-                                                              .withBlue(40)
-                                                              .withOpacity(
-                                                                  0.8)),
-                                                    ),
-                                                  ],
-                                                ),
-                                        ),
+                                          Container(
+                                            height: 40,
+                                            alignment: Alignment.centerLeft,
+                                            child: Padding(
+                                              padding: const EdgeInsets.only(
+                                                left: 8,
+                                                top: 5,
+                                                right: 10,
+                                              ),
+                                              child: Container(
+                                                child: _queryDocumentSnapshot
+                                                            .get("Message") !=
+                                                        ""
+                                                    ? Text(
+                                                        _queryDocumentSnapshot
+                                                            .get("Message"),
+                                                        maxLines: 3,
+                                                      )
+                                                    : Row(
+                                                        children: [
+                                                          Icon(
+                                                            Icons.photo,
+                                                            color: Colors.black
+                                                                .withBlue(40)
+                                                                .withOpacity(
+                                                                    0.7),
+                                                          ),
+                                                          Text(
+                                                            "Photo",
+                                                            style: TextStyle(
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w200,
+                                                                fontSize: 17,
+                                                                color: Colors
+                                                                    .black
+                                                                    .withBlue(
+                                                                        40)
+                                                                    .withOpacity(
+                                                                        0.8)),
+                                                          ),
+                                                        ],
+                                                      ),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                    ),
-                    Container(
-                      width: MediaQuery.of(context).size.width - 16,
-                      child: Stack(
-                        children: [
-                          Positioned(
-                            left: 5,
-                            bottom: 2,
-                            child: TextButton(
-                                style: ButtonStyle(
-                                    backgroundColor:
-                                        MaterialStateProperty.all(Colors.blue),
-                                    shape: MaterialStateProperty.all(
-                                        CircleBorder()),
-                                    minimumSize: MaterialStateProperty.all(
-                                        Size(45, 45))),
-                                onPressed: () async {
-                                  await sendMediaMessage();
-                                },
-                                child: Icon(
-                                  Icons.photo_camera,
-                                  color: Colors.white,
-                                )),
+                                  ),
                           ),
                           Container(
-                            alignment: Alignment.center,
-                            padding: EdgeInsets.only(bottom: 2),
-                            margin: EdgeInsets.only(left: 60),
-                            width: MediaQuery.of(context).size.width * 0.68,
-                            child: TextField(
-                              onChanged: (str) {
-                                Message.message = str;
-                                _autoScrollController.jumpTo(
-                                    _autoScrollController
-                                        .position.minScrollExtent);
-                              },
-                              autocorrect: true,
-                              focusNode: messageFocusNode,
-                              minLines: 1,
-                              maxLines: 5,
-                              controller: messageController,
-                              decoration: InputDecoration(
-                                hintText: 'Type a message',
-                                border: InputBorder.none,
-                              ),
-                            ),
-                          ),
-                          Positioned(
-                            right: 0,
-                            bottom: 0,
-                            child: TextButton(
-                                style: ButtonStyle(
-                                  minimumSize:
-                                      MaterialStateProperty.all(Size(50, 50)),
-                                  shape:
-                                      MaterialStateProperty.all(CircleBorder()),
+                            width: MediaQuery.of(context).size.width - 16,
+                            child: Stack(
+                              children: [
+                                Positioned(
+                                  left: 5,
+                                  bottom: 2,
+                                  child: TextButton(
+                                      style: ButtonStyle(
+                                          backgroundColor:
+                                              MaterialStateProperty.all(
+                                                  Colors.blue),
+                                          shape: MaterialStateProperty.all(
+                                              CircleBorder()),
+                                          minimumSize:
+                                              MaterialStateProperty.all(
+                                                  Size(45, 45))),
+                                      onPressed: () async {
+                                        await sendMediaMessage();
+                                      },
+                                      child: Icon(
+                                        Icons.photo_camera,
+                                        color: Colors.white,
+                                      )),
                                 ),
-                                onPressed: () {
-                                  if (messageController.text != "") {
-                                    messageController.clear();
-                                    sendMessage();
-                                  }
-                                },
-                                child: Padding(
-                                  padding: const EdgeInsets.only(
-                                    bottom: 8.0,
-                                    left: 5,
+                                Container(
+                                  alignment: Alignment.center,
+                                  padding: const EdgeInsets.only(bottom: 2),
+                                  margin: const EdgeInsets.only(left: 60),
+                                  width:
+                                      MediaQuery.of(context).size.width * 0.68,
+                                  child: TextField(
+                                    onChanged: (str) {
+                                      Message.message = str;
+                                      _autoScrollController.jumpTo(
+                                          _autoScrollController
+                                              .position.minScrollExtent);
+                                    },
+                                    autocorrect: true,
+                                    focusNode: messageFocusNode,
+                                    minLines: 1,
+                                    maxLines: 5,
+                                    controller: messageController,
+                                    decoration: InputDecoration(
+                                      hintText: 'Type a message',
+                                      border: InputBorder.none,
+                                    ),
                                   ),
-                                  child: Transform.rotate(
-                                      angle: math.pi / 0.55,
-                                      child: Icon(Icons.send,
-                                          color: Colors.black.withBlue(60))),
-                                )),
+                                ),
+                                Positioned(
+                                  right: 0,
+                                  bottom: 0,
+                                  child: TextButton(
+                                      style: ButtonStyle(
+                                        minimumSize: MaterialStateProperty.all(
+                                            Size(50, 50)),
+                                        shape: MaterialStateProperty.all(
+                                            CircleBorder()),
+                                      ),
+                                      onPressed: () {
+                                        if (messageController.text != "") {
+                                          messageController.clear();
+                                          sendMessage();
+                                        }
+                                      },
+                                      child: Padding(
+                                        padding: const EdgeInsets.only(
+                                          bottom: 8.0,
+                                          left: 5,
+                                        ),
+                                        child: Transform.rotate(
+                                            angle: math.pi / 0.55,
+                                            child: Icon(Icons.send,
+                                                color:
+                                                    Colors.black.withBlue(60))),
+                                      )),
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
                     ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
+                  ),
+                ],
+              );
+            }),
       ),
     );
   }
 
-  sendMessage({String filePath, bool isImage: false, bool isVideo: false}) {
+  sendMessage(
+      {String filePath, bool isImage: false, bool isVideo: false}) async {
     setState(() {
       DataBaseServices dbs = new DataBaseServices();
       Map<String, dynamic> map;
@@ -445,18 +449,56 @@ class _ChatsState extends State<Chats> {
         print('ChatRoomID is : ${widget.chatRoomID}');
         await dbs.sendMessage(widget.chatRoomID, map);
         Message.message = "";
+        print("Message : A new message sent");
+      });
+    });
+    if (!isImage && !isVideo) {
+      print("Message : It retured");
+      return;
+    }
+    String fileType = isImage ? "images" : "videos";
+    Reference reference = FirebaseStorage.instance.ref().child(
+        "${widget.chatRoomID}/${Constants.uid}/images/${Path.basename(filePath)}");
+    UploadTask uploadTask = reference.putFile(File(filePath));
+    uploadTask.snapshotEvents.listen((event) {
+      setState(() {
+        print(
+            "Progress ${event.bytesTransferred.toDouble() / event.totalBytes.toDouble()}");
+      });
+    }).onError((e) {
+      print('There is an error : $e');
+    });
+    TaskSnapshot taskSnapshot = await uploadTask.whenComplete(() async {
+      String downloadURL = await reference.getDownloadURL();
+      setState(() {
+        FirebaseFirestore.instance
+            .collection("ChatRooms")
+            .doc(widget.chatRoomID)
+            .collection("Messages")
+            .where("FilePath1", isEqualTo: filePath)
+            .limit(1)
+            .get()
+            .then((value) {
+          if (isImage) {
+            value.docs[0].reference.update({
+              "ImageURL": downloadURL,
+            });
+          } else if (isVideo) {
+            value.docs[0].reference.update({
+              "VideoURL": downloadURL,
+            });
+          }
+        });
       });
     });
   }
-
-  uploadFile() {}
 
   Future<int> populateSelection() async {
     QuerySnapshot snapshot = await FirebaseFirestore.instance
         .collection("ChatRooms")
         .doc(widget.chatRoomID)
         .collection("Messages")
-        .where("Visible", arrayContains: Constants.userName)
+        .where("Visible", arrayContains: Constants.uid)
         .get();
     int length = snapshot.docs.length;
     isSelected = List.generate(length, (index) => false, growable: true);
@@ -478,10 +520,6 @@ class _ChatsState extends State<Chats> {
   }
 
   Widget messageTile(int index, AsyncSnapshot<QuerySnapshot> chatRoomSnapshot) {
-    if (!isSelected.contains(true)) {
-      isSelected =
-          List.generate(chatRoomSnapshot.data.docs.length, (index) => false);
-    }
     String imageURL = chatRoomSnapshot.data.docs[index].get("ImageURL");
     bool byme =
         chatRoomSnapshot.data.docs[index].get("Sender") == Constants.uid;
@@ -501,6 +539,7 @@ class _ChatsState extends State<Chats> {
     bool isVideo = chatRoomSnapshot.data.docs[index].get("isVideo");
     if (isSelected.isEmpty || isSelected.length <= index) {
       return Container(
+        margin: EdgeInsets.only(bottom: 5, top: 5),
         width: MediaQuery.of(context).size.width,
         height: 200,
         color: Colors.pink,

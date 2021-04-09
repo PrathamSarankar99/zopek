@@ -38,7 +38,6 @@ class _VideoMessageState extends State<VideoMessage> {
   @override
   void didUpdateWidget(covariant VideoMessage oldWidget) {
     setThumbnail();
-
     super.didUpdateWidget(oldWidget);
   }
 
@@ -316,23 +315,6 @@ class _VideoMessageState extends State<VideoMessage> {
               ),
             ),
           ),
-          TextButton(
-            onPressed: () {
-              if (progress == 0) {
-                uploadFile().then((value) {
-                  print("Uploading is done");
-                });
-              } else {
-                Fluttertoast.showToast(
-                  msg: "Already uploading",
-                  backgroundColor: Colors.red,
-                  gravity: ToastGravity.TOP,
-                  textColor: Colors.white,
-                );
-              }
-            },
-            child: Icon(Icons.upload_file),
-          )
         ],
       ),
     ));
@@ -342,35 +324,5 @@ class _VideoMessageState extends State<VideoMessage> {
     return Container(
       color: Colors.blue,
     );
-  }
-
-  Future uploadFile() async {
-    if ((widget.snapshot.get("Sender") == Constants.uid) &&
-        widget.snapshot.get("VideoURL") == '') {
-      uploadImage(widget.snapshot.get('FilePath1'));
-    }
-  }
-
-  uploadImage(String filePath) async {
-    Reference reference = FirebaseStorage.instance.ref().child(
-        "${widget.chatRoomID}/${Constants.uid}/videos/${basename(filePath)}");
-    UploadTask uploadTask = reference.putFile(File(filePath));
-    uploadTask.snapshotEvents.listen((event) {
-      setState(() {
-        progress =
-            event.bytesTransferred.toDouble() / event.totalBytes.toDouble();
-        print('Progress : $progress');
-      });
-    }).onError((e) {
-      print('There is an error : $e');
-    });
-    TaskSnapshot taskSnapshot = await uploadTask.whenComplete(() async {
-      String downloadURL = await reference.getDownloadURL();
-      setState(() {
-        widget.snapshot.reference.update({
-          "VideoURL": downloadURL,
-        });
-      });
-    });
   }
 }

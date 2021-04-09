@@ -1,12 +1,8 @@
-import 'dart:math';
 import 'dart:ui';
 import 'package:cloud_firestore/cloud_firestore.dart';
 // import 'package:dio/dio.dart';
-import 'package:file_utils/file_utils.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:zopek/Modals/Constants.dart';
 import 'package:path/path.dart' as Path;
 import 'dart:io';
@@ -35,23 +31,6 @@ class _ImageMessageState extends State<ImageMessage> {
     if (mounted) {
       super.setState(fn);
     }
-  }
-
-  @override
-  void initState() {
-    print(
-        "ImageState - Created - ${Path.basename(widget.snapshot.get('FilePath1'))} ");
-    uploadFile().then((value) {
-      print("Uploading is done");
-    });
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    print(
-        "ImageState - Destroyed - ${Path.basename(widget.snapshot.get('FilePath1'))} ");
-    super.dispose();
   }
 
   @override
@@ -305,36 +284,5 @@ class _ImageMessageState extends State<ImageMessage> {
         );
       },
     );
-  }
-
-  Future uploadFile() async {
-    setState(() {
-      if ((widget.snapshot.get("Sender") == Constants.uid) &&
-          widget.snapshot.get("ImageURL") == '') {
-        uploadImage(widget.snapshot.get('FilePath1'));
-      }
-    });
-  }
-
-  uploadImage(String filePath) async {
-    Reference reference = FirebaseStorage.instance.ref().child(
-        "${widget.chatRoomID}/${Constants.uid}/images/${Path.basename(filePath)}");
-    UploadTask uploadTask = reference.putFile(File(filePath));
-    uploadTask.snapshotEvents.listen((event) {
-      setState(() {
-        progress =
-            event.bytesTransferred.toDouble() / event.totalBytes.toDouble();
-      });
-    }).onError((e) {
-      print('There is an error : $e');
-    });
-    TaskSnapshot taskSnapshot = await uploadTask.whenComplete(() async {
-      String downloadURL = await reference.getDownloadURL();
-      setState(() {
-        widget.snapshot.reference.update({
-          "ImageURL": downloadURL,
-        });
-      });
-    });
   }
 }
