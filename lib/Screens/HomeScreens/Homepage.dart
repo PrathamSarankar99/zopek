@@ -34,6 +34,7 @@ class _HomepageState extends State<Homepage> {
 
   @override
   void initState() {
+    print("AppState - created");
     super.initState();
     populateSelection();
     deleteEmptyChatRooms();
@@ -42,10 +43,15 @@ class _HomepageState extends State<Homepage> {
     getUserDetails();
   }
 
+  @override
+  void dispose() {
+    print("AppState - finished");
+    super.dispose();
+  }
+
   double _containerheight = 200;
   @override
   Widget build(BuildContext context) {
-    print("Uid is : ${Constants.uid}");
     double height = MediaQuery.of(context).size.height;
     double width = MediaQuery.of(context).size.width;
     double opacity = 1 -
@@ -64,147 +70,192 @@ class _HomepageState extends State<Homepage> {
                     height: height * 0.40,
                     width: width,
                     color: Colors.black.withBlue(40),
-                    child: Column(
+                    child: Stack(
                       children: [
-                        SafeArea(
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Padding(
-                                padding:
-                                    const EdgeInsets.fromLTRB(15, 50, 0, 0),
-                                child: Text(
-                                  "Messages",
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 25,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                              Spacer(),
-                              Padding(
-                                padding:
-                                    const EdgeInsets.fromLTRB(0, 40, 20, 0),
-                                child: Row(
-                                  children: [
-                                    GestureDetector(
-                                      onTap: () {
-                                        Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                                builder: (context) =>
-                                                    SearchScreen()));
-                                      },
-                                      child: Container(
-                                        padding: EdgeInsets.all(10),
-                                        decoration: BoxDecoration(
-                                          color: Color(0xff444446),
-                                          borderRadius:
-                                              BorderRadius.circular(12),
-                                        ),
-                                        child: Icon(
-                                          Icons.search,
-                                          color: Colors.white,
-                                        ),
+                        Positioned(
+                            left: 0,
+                            top: height * 0.15,
+                            height: height * 0.25,
+                            width: width * 0.5,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                  gradient: RadialGradient(
+                                colors: [
+                                  Colors.cyan.withOpacity(0.65),
+                                  Colors.black.withBlue(40)
+                                ],
+                                center: Alignment.bottomLeft,
+                                //focalRadius: 100,
+                                radius: 1,
+                              )),
+                            )),
+                        Positioned(
+                            top: 0,
+                            right: 0,
+                            height: height * 0.25,
+                            width: width * 0.65,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                  gradient: RadialGradient(
+                                colors: [
+                                  Colors.cyan.withOpacity(0.6),
+                                  Colors.black.withBlue(40)
+                                ],
+                                center: Alignment.topCenter,
+                                radius: 0.7,
+                              )),
+                            )),
+                        Column(
+                          children: [
+                            SafeArea(
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Padding(
+                                    padding:
+                                        const EdgeInsets.fromLTRB(15, 50, 0, 0),
+                                    child: Text(
+                                      "Messages",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 25,
+                                        fontWeight: FontWeight.w600,
                                       ),
                                     ),
-                                    SizedBox(
-                                      width: 10,
-                                    ),
-                                    GestureDetector(
-                                      onTap: () async {},
-                                      child: Container(
-                                        padding: EdgeInsets.all(10),
-                                        decoration: BoxDecoration(
-                                          color: Color(0xff444446),
-                                          borderRadius:
-                                              BorderRadius.circular(12),
-                                        ),
-                                        child: GestureDetector(
-                                          onTap: () async {
+                                  ),
+                                  Spacer(),
+                                  Padding(
+                                    padding:
+                                        const EdgeInsets.fromLTRB(0, 40, 20, 0),
+                                    child: Row(
+                                      children: [
+                                        GestureDetector(
+                                          onTap: () {
                                             Navigator.push(
                                                 context,
-                                                PageTransition(
-                                                    duration: Duration(
-                                                        milliseconds: 100),
-                                                    alignment:
-                                                        Alignment.topRight,
-                                                    child:
-                                                        settings.SettingsPage(),
-                                                    type: PageTransitionType
-                                                        .fade));
+                                                MaterialPageRoute(
+                                                    builder: (context) =>
+                                                        SearchScreen()));
                                           },
-                                          child: Icon(
-                                            Icons.settings,
-                                            color: Colors.white,
+                                          child: Container(
+                                            padding: EdgeInsets.all(10),
+                                            decoration: BoxDecoration(
+                                              color: Color(0xff444446),
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                            ),
+                                            child: Icon(
+                                              Icons.search,
+                                              color: Colors.white,
+                                            ),
                                           ),
                                         ),
-                                      ),
+                                        SizedBox(
+                                          width: 10,
+                                        ),
+                                        GestureDetector(
+                                          onTap: () async {},
+                                          child: Container(
+                                            padding: EdgeInsets.all(10),
+                                            decoration: BoxDecoration(
+                                              color: Color(0xff444446),
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                            ),
+                                            child: GestureDetector(
+                                              onTap: () async {
+                                                Navigator.push(
+                                                    context,
+                                                    PageTransition(
+                                                        duration: Duration(
+                                                            milliseconds: 100),
+                                                        alignment:
+                                                            Alignment.topRight,
+                                                        child: settings
+                                                            .SettingsPage(),
+                                                        type: PageTransitionType
+                                                            .fade));
+                                              },
+                                              child: Icon(
+                                                Icons.settings,
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                        ),
-                        AnimatedOpacity(
-                          opacity:
-                              (opacity == null || opacity > 1 || opacity < 0)
+                            ),
+                            AnimatedOpacity(
+                              opacity: (opacity == null ||
+                                      opacity > 1 ||
+                                      opacity < 0)
                                   ? 1
                                   : opacity,
-                          duration: Duration(microseconds: 0),
-                          child: Row(
-                            children: [
-                              Expanded(child: Container(child: YourStory())),
-                              Container(
-                                height: height * (maxHeight - minHeight),
-                                width: MediaQuery.of(context).size.width - 100,
-                                child: roomSnapshot.hasData
-                                    ? ListView.builder(
-                                        scrollDirection: Axis.horizontal,
-                                        itemCount:
-                                            roomSnapshot.data.docs.length,
-                                        itemBuilder: (context, index) {
-                                          String uid = roomSnapshot
+                              duration: Duration(microseconds: 0),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                      child: Container(child: YourStory())),
+                                  Container(
+                                    height: height * (maxHeight - minHeight),
+                                    width:
+                                        MediaQuery.of(context).size.width - 100,
+                                    child: roomSnapshot.hasData
+                                        ? ListView.builder(
+                                            scrollDirection: Axis.horizontal,
+                                            itemCount:
+                                                roomSnapshot.data.docs.length,
+                                            itemBuilder: (context, index) {
+                                              String uid = roomSnapshot
+                                                          .data.docs[index]
+                                                          .get("Users")[0] ==
+                                                      Constants.uid
+                                                  ? roomSnapshot
                                                       .data.docs[index]
-                                                      .get("Users")[0] ==
-                                                  Constants.uid
-                                              ? roomSnapshot.data.docs[index]
-                                                  .get("Users")[1]
-                                              : roomSnapshot.data.docs[index]
-                                                  .get("Users")[0];
+                                                      .get("Users")[1]
+                                                  : roomSnapshot
+                                                      .data.docs[index]
+                                                      .get("Users")[0];
 
-                                          return StreamBuilder(
-                                              stream: dataBaseServices
-                                                  .getUserByID(uid),
-                                              builder: (context, userSnapshot) {
-                                                if (!roomSnapshot.hasData ||
-                                                    !userSnapshot.hasData) {
-                                                  return Container();
-                                                }
-                                                String username = userSnapshot
-                                                            .data
+                                              return StreamBuilder(
+                                                  stream: dataBaseServices
+                                                      .getUserByID(uid),
+                                                  builder:
+                                                      (context, userSnapshot) {
+                                                    if (!roomSnapshot.hasData ||
+                                                        !userSnapshot.hasData) {
+                                                      return Container();
+                                                    }
+                                                    String username = userSnapshot
+                                                                .data
+                                                                .get("UserName")
+                                                                .toString()
+                                                                .length >
+                                                            15
+                                                        ? '${userSnapshot.data.get("UserName").toString().substring(0, 15)}...'
+                                                        : userSnapshot.data
                                                             .get("UserName")
-                                                            .toString()
-                                                            .length >
-                                                        15
-                                                    ? '${userSnapshot.data.get("UserName").toString().substring(0, 15)}...'
-                                                    : userSnapshot.data
-                                                        .get("UserName")
-                                                        .toString();
-                                                return StatusWidget(
-                                                    username: username,
-                                                    photoURL: userSnapshot.data
-                                                        .get("PhotoURL"),
-                                                    color: Colors.blue);
-                                              });
-                                        })
-                                    : Container(),
+                                                            .toString();
+                                                    return StatusWidget(
+                                                        uid: uid,
+                                                        username: username,
+                                                        photoURL: userSnapshot
+                                                            .data
+                                                            .get("PhotoURL"),
+                                                        color: Colors.blue);
+                                                  });
+                                            })
+                                        : Container(),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -273,7 +324,7 @@ class _HomepageState extends State<Homepage> {
                                   alignment: Alignment.center,
                                   width: MediaQuery.of(context).size.width,
                                   decoration: BoxDecoration(
-                                    color: Colors.white,
+                                    color: Colors.transparent,
                                     borderRadius: BorderRadius.only(
                                         topLeft: Radius.circular(30),
                                         topRight: Radius.circular(30)),
@@ -675,7 +726,6 @@ class _HomepageState extends State<Homepage> {
       return Container();
     }
     return ListTile(
-      
         selectedTileColor: Colors.cyan.withOpacity(0.2),
         selected: this.isSelected.isEmpty || this.isSelected.length <= index
             ? false
@@ -752,8 +802,7 @@ class _HomepageState extends State<Homepage> {
             : Padding(
                 padding: const EdgeInsets.only(top: 5),
                 child: lastMessageSnapshot.data.docs[0].get("Message") == ""
-                    ? (lastMessageSnapshot.data.docs[0].get("ImageURL") ==
-                            null
+                    ? (lastMessageSnapshot.data.docs[0].get("ImageURL") == null
                         ? Row()
                         : Row(
                             children: [
@@ -792,7 +841,7 @@ class _HomepageState extends State<Homepage> {
       Constants.photoURL = element.get("PhotoURL");
       Constants.phoneNo = element.get("PhoneNo");
       Constants.uid = element.id;
-      Constants.bio = element.get('Bio');
+      Constants.status = element.get('Status');
     });
   }
 }

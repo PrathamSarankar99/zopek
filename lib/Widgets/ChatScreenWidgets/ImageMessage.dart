@@ -30,10 +30,6 @@ class ImageMessage extends StatefulWidget {
 
 class _ImageMessageState extends State<ImageMessage> {
   double progress = 0;
-  Permission permission1 = Permission.storage;
-  double downloadingprogress = 0;
-  var path = "No Data";
-
   @override
   void setState(fn) {
     if (mounted) {
@@ -43,14 +39,19 @@ class _ImageMessageState extends State<ImageMessage> {
 
   @override
   void initState() {
-    uploadFile();
+    print(
+        "ImageState - Created - ${Path.basename(widget.snapshot.get('FilePath1'))} ");
+    uploadFile().then((value) {
+      print("Uploading is done");
+    });
     super.initState();
   }
 
   @override
-  void didUpdateWidget(covariant ImageMessage oldWidget) {
-    uploadFile();
-    super.didUpdateWidget(oldWidget);
+  void dispose() {
+    print(
+        "ImageState - Destroyed - ${Path.basename(widget.snapshot.get('FilePath1'))} ");
+    super.dispose();
   }
 
   @override
@@ -61,7 +62,7 @@ class _ImageMessageState extends State<ImageMessage> {
             ? Colors.amber.shade300.withOpacity(0.5)
             : Color.fromRGBO(23, 105, 164, 0.5))
         : Colors.transparent;
-    print(downloadingprogress);
+    print(progress);
     return (widget.snapshot.get("ImageURL") == '' &&
             !(widget.snapshot.get("Sender") == Constants.uid))
         ? Container()
@@ -113,9 +114,6 @@ class _ImageMessageState extends State<ImageMessage> {
                                         ? postUpload()
                                         : preUpload())
                                     : networkImage(true),
-                            // : (widget.snapshot.get("FilePath2") != ''
-                            //     ? postDownload()
-                            //     : preDownload()),
                           ),
                         ],
                       ),
@@ -284,80 +282,6 @@ class _ImageMessageState extends State<ImageMessage> {
     ));
   }
 
-  // Widget postDownload() {
-  //   try {
-  //     return Image.file(
-  //       File(widget.snapshot.get("FilePath2")),
-  //       fit: BoxFit.cover,
-  //       errorBuilder: (context, error, stackTrace) {
-  //         return preDownload();
-  //       },
-  //     );
-  //   } catch (e) {
-  //     return preDownload();
-  //   }
-  // }
-
-  // Widget preDownload() {
-  //   return Container(
-  //       child: Stack(
-  //     fit: StackFit.expand,
-  //     alignment: Alignment.center,
-  //     children: [
-  //       ImageFiltered(
-  //           imageFilter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-  //           child: networkImage(false)),
-  //       Container(
-  //         alignment: Alignment.center,
-  //         child: Container(
-  //           width: 90,
-  //           height: 90,
-  //           child: CircularProgressIndicator(
-  //             value: (downloadingprogress > 0.0 && downloadingprogress < 1.0)
-  //                 ? downloadingprogress
-  //                 : 0,
-  //             strokeWidth: 1.5,
-  //             valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-  //           ),
-  //         ),
-  //       ),
-  //       Container(
-  //         alignment: Alignment.center,
-  //         child: Container(
-  //           width: 90,
-  //           height: 90,
-  //           child: TextButton(
-  //             style: ButtonStyle(
-  //               shape: MaterialStateProperty.all(CircleBorder()),
-  //               minimumSize: MaterialStateProperty.all(Size(50, 50)),
-  //             ),
-  //             onPressed: () {
-  //               _requestDownload();
-  //               setState(() {
-  //                 downloadingprogress = 0;
-  //               });
-  //             },
-  //             child: downloadingprogress > 0 && downloadingprogress < 1
-  //                 ? (downloadingprogress == 1
-  //                     ? Container()
-  //                     : Container(
-  //                         child: Text(
-  //                           ((downloadingprogress * 100).toInt()).toString() +
-  //                               "%",
-  //                           style: TextStyle(color: Colors.white),
-  //                         ),
-  //                       ))
-  //                 : Icon(
-  //                     Icons.download_sharp,
-  //                     color: Colors.white,
-  //                   ),
-  //           ),
-  //         ),
-  //       ),
-  //     ],
-  //   ));
-  // }
-
   Widget networkImage(bool needLoader) {
     return Image.network(
       widget.snapshot.get("ImageURL"),
@@ -383,26 +307,7 @@ class _ImageMessageState extends State<ImageMessage> {
     );
   }
 
-  Future<String> _findLocalPath() async {
-    final directory = await getExternalStorageDirectory();
-    return directory.path;
-  }
-
-  Future<bool> _checkPermission() async {
-    final status = await Permission.storage.status;
-    if (status != PermissionStatus.granted) {
-      final result = await Permission.storage.request();
-      if (result == PermissionStatus.granted) {
-        return true;
-      }
-    } else {
-      return true;
-    }
-
-    return false;
-  }
-
-  uploadFile() {
+  Future uploadFile() async {
     setState(() {
       if ((widget.snapshot.get("Sender") == Constants.uid) &&
           widget.snapshot.get("ImageURL") == '') {

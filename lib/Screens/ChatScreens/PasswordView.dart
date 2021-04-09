@@ -175,6 +175,7 @@ class _PasswordViewState extends State<PasswordView> {
                                                           .setPassword('',
                                                               Constants.uid);
                                                       AuthServices().signOut();
+                                                      Navigator.of(context).popUntil((route) => route.isFirst);
                                                       Navigator.pushReplacement(
                                                           context,
                                                           PageTransition(

@@ -1,12 +1,92 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter_absolute_path/flutter_absolute_path.dart';
+import 'package:multi_image_picker/multi_image_picker.dart';
+import 'package:page_transition/page_transition.dart';
+import 'package:path/path.dart';
+import 'package:zopek/Modals/Camera.dart';
 import 'package:zopek/Modals/Constants.dart';
+import 'package:zopek/Modals/ImageSource.dart';
+import 'package:zopek/Screens/ChatScreens/Capture.dart';
 import 'package:zopek/Services/Utils.dart';
 
 class DataBaseServices {
   uploadUserInfo(Map<String, dynamic> map, String uid) {
     FirebaseFirestore.instance.collection("Users").doc(uid).set(map);
   }
+  
+  Future<List<dynamic>> getWallpapers(String chatRoomID)async{
+    DocumentSnapshot snap = await FirebaseFirestore.instance.collection("ChatRooms").doc(chatRoomID).get();
+    return snap.get("Wallpapers");
+  }
+
+  removeWallpaper(String chatRoomID,int index)async{
+    DocumentSnapshot snap = await FirebaseFirestore.instance.collection("ChatRooms").doc(chatRoomID).get();
+    List<dynamic> list = snap.get("Wallpapers");
+    if(list.isEmpty){
+          return;
+    }    
+    list[index] = "";
+    snap.reference.update({
+      "Wallpapers":list,
+    });
+
+  }
+
+  Future<String> updateWallpaper(String chatRoomID, int index,ImageSource source,BuildContext context)async{
+    DocumentSnapshot snap = await FirebaseFirestore.instance.collection("ChatRooms").doc(chatRoomID).get();
+    List<dynamic> list = snap.get("Wallpapers");
+    String downloadURL = "";
+    switch (source){
+      case ImageSource.camera:
+        {
+          String path = await Navigator.push(
+          context,
+          PageTransition(
+              child: Capture(
+                  cameraDescriptions:
+                      CameraConfigurations.cameraDescriptionList),
+              type: PageTransitionType.fade));
+          Reference reference = FirebaseStorage.instance
+              .ref()
+              .child("$chatRoomID/${Constants.uid}/wallpaper/${basename(path)}");
+          UploadTask uploadTask = reference.putFile(File(path));
+          TaskSnapshot taskSnapshot = await uploadTask.whenComplete(() async {
+            downloadURL = await reference.getDownloadURL();
+            list[index] = downloadURL;
+            snap.reference.update({
+              "Wallpapers":list,
+            });
+          });   
+        }
+        break;
+      case ImageSource.gallery:
+        {
+          List<Asset> imageFile =
+          await MultiImagePicker.pickImages(maxImages: 1, enableCamera: true);
+          String path = await FlutterAbsolutePath.getAbsolutePath(imageFile[0].identifier);
+           Reference reference = FirebaseStorage.instance
+              .ref()
+              .child("$chatRoomID/${Constants.uid}/wallpaper/${basename(path)}");
+          UploadTask uploadTask = reference.putFile(File(path));
+          TaskSnapshot taskSnapshot = await uploadTask.whenComplete(() async {
+            downloadURL = await reference.getDownloadURL();
+            list[index] = downloadURL;
+            snap.reference.update({
+              "Wallpapers":list,
+            });
+          });  
+        }
+        break;
+    }
+    return downloadURL;
+  }
+
+
 
   addMessagingTokens(String token, String uid)async {
      List<dynamic> existingTokens =[];
@@ -65,9 +145,9 @@ class DataBaseServices {
     });
   }
 
-  updateBio(String bio) {
+  updateBio(String status) {
     FirebaseFirestore.instance.collection('Users').doc(Constants.uid).update({
-      'Bio': bio,
+      'Status': status,
     });
   }
 

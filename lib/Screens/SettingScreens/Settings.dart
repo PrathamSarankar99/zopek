@@ -25,7 +25,7 @@ class _SettingsPageState extends State<SettingsPage> {
   double progress = 0;
   @override
   Widget build(BuildContext context) {
-    print('Constants : ${Constants.bio}');
+    print('Constants : ${Constants.status}');
     var height = MediaQuery.of(context).size.height;
     var width = MediaQuery.of(context).size.width;
     return Scaffold(
@@ -258,10 +258,10 @@ class _SettingsPageState extends State<SettingsPage> {
               },
               title: Padding(
                 padding: EdgeInsets.only(bottom: 5),
-                child: Constants.bio.length > 1
-                    ? Text(Constants.bio)
+                child: Constants.status.length > 1
+                    ? Text(Constants.status)
                     : Text(
-                        Constants.bio == '' ? "Bio" : Constants.bio,
+                        Constants.status == '' ? "Status" : Constants.status,
                         style: TextStyle(
                           fontSize: 17,
                           fontWeight: FontWeight.w500,
@@ -270,7 +270,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       ),
               ),
               subtitle: Text(
-                Constants.bio == ''
+                Constants.status == ''
                     ? "Add a few words about yourself."
                     : "Tap to change",
                 style: TextStyle(
@@ -319,7 +319,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
   updateBio(BuildContext context) {
     TextEditingController tdc = new TextEditingController()
-      ..text = Constants.bio;
+      ..text = Constants.status;
     showDialog(
         context: context,
         builder: (context) {
@@ -336,7 +336,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     dataBaseServices.updateBio(tdc.text.trim());
                     Navigator.pop(context);
                     setState(() {
-                      Constants.bio = tdc.text.trim();
+                      Constants.status = tdc.text.trim();
                     });
                   },
                   icon: Icon(Icons.check),

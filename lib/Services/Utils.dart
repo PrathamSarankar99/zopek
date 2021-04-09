@@ -18,7 +18,7 @@ class Utils {
       "PhoneNo": phoneNo,
       "SearchKeywords": searchKeywords,
       "Password": '',
-      "Bio": '',
+      "Status": '',
       "MessagingTokens":token,
     };
   }
@@ -51,10 +51,11 @@ class Utils {
   }
 
   Map<String, dynamic> mapForChatRoom(List<String> users, Timestamp timestamp) {
+    List<String> wallpapers = [];
     return {
       "Users": users,
       "LastMessageTime": timestamp,
-      "Password": '',
+      "Wallpapers" : wallpapers,
     };
   }
 }

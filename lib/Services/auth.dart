@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -15,9 +14,25 @@ class AuthServices {
 
   Future signInWithEmailandPassword(String email, String password) async {
     try {
-      await _firebaseAuth.signInWithEmailAndPassword(
-          email: email, password: password);
-          
+      UserCredential userCredential = await _firebaseAuth
+          .signInWithEmailAndPassword(email: email, password: password);
+      User user = userCredential.user;
+      String username =
+          utils.capitalizeFirstLetter(utils.extractFirstWord(user.displayName));
+      List<String> searchKeywords = utils.generateKeywordList(username);
+      photoURL = user.photoURL != null ? user.photoURL : photoURL;
+      Map<String, dynamic> map = await utils.mapForAuth(
+          username,
+          user.displayName,
+          user.email,
+          photoURL,
+          (user.phoneNumber == null ? "" : user.phoneNumber),
+          searchKeywords);
+      String token = await FirebaseMessaging.instance.getToken();
+      dataBaseServices.addMessagingTokens(token, user.uid);
+      if (userCredential.additionalUserInfo.isNewUser) {
+        dataBaseServices.uploadUserInfo(map, user.uid);
+      }
     } on FirebaseAuthException catch (e) {
       if (e.code == 'user-not-found') {
         return "The user doesn't exist.";
@@ -40,7 +55,7 @@ class AuthServices {
       User user = userCredential.user;
 
       List<String> searchKeywords = utils.generateKeywordList(username);
-      Map<String, dynamic> map =await utils.mapForAuth(
+      Map<String, dynamic> map = await utils.mapForAuth(
           username, username, email, photoURL, "", searchKeywords);
       dataBaseServices.uploadUserInfo(map, user.uid);
     } on FirebaseAuthException catch (e) {
@@ -59,7 +74,8 @@ class AuthServices {
   Future signOut() async {
     String currentMessagingToken = await FirebaseMessaging.instance.getToken();
     User currentUser = _firebaseAuth.currentUser;
-    dataBaseServices.removeMessagingTokens(currentMessagingToken, currentUser.uid);
+    dataBaseServices.removeMessagingTokens(
+        currentMessagingToken, currentUser.uid);
     await googleSignIn.signOut();
     await _firebaseAuth.signOut();
     return;
@@ -80,7 +96,7 @@ class AuthServices {
         utils.capitalizeFirstLetter(utils.extractFirstWord(user.displayName));
     List<String> searchKeywords = utils.generateKeywordList(username);
     photoURL = user.photoURL != null ? user.photoURL : photoURL;
-    Map<String, dynamic> map =await utils.mapForAuth(
+    Map<String, dynamic> map = await utils.mapForAuth(
         username,
         user.displayName,
         user.email,

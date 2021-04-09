@@ -13,7 +13,7 @@ class SearchScreen extends StatefulWidget {
 class _SearchScreenState extends State<SearchScreen> {
   TextEditingController searchTextTEC = TextEditingController();
   QuerySnapshot snap;
-  int searchlength;
+  int searchlength=0;
   DataBaseServices dataBaseServices = new DataBaseServices();
   Utils utils = new Utils();
   @override
@@ -79,7 +79,7 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget getUsersList() {
-    if (searchlength == null || searchlength == 0) {
+    if (searchlength == 0) {
       return Container();
     } else {
       return Expanded(
@@ -99,7 +99,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   ),
                   title: Text(snap.docs[index].get("UserName")),
                   subtitle: Text(
-                    snap.docs[index].get("Bio"),
+                    snap.docs[index].get("Status"),
                     maxLines: 2,
                     style: TextStyle(
                       fontSize: 13,

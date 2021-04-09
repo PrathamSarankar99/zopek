@@ -7,16 +7,21 @@ import 'package:page_transition/page_transition.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:swipe_to/swipe_to.dart';
+import 'package:thumbnails/thumbnails.dart';
+import 'package:zopek/Modals/ImageSource.dart';
+import 'package:zopek/Modals/revert.dart';
 import 'package:zopek/Screens/ChatScreens/AboutView.dart';
 import 'package:zopek/Screens/ChatScreens/Capture.dart';
 import 'package:zopek/Screens/ChatScreens/PasswordView.dart';
 import 'package:zopek/Screens/HomeScreens/Homepage.dart';
 import 'package:zopek/Modals/Camera.dart';
 import 'package:zopek/Modals/Constants.dart';
+import 'package:zopek/Services/Utils.dart';
 import 'package:zopek/Services/database.dart';
 import 'dart:math' as math;
 import 'package:zopek/Widgets/ChatScreenWidgets/ImageMessage.dart';
 import 'package:zopek/Widgets/ChatScreenWidgets/TextMessage.dart';
+import 'package:zopek/Widgets/ChatScreenWidgets/VideoMessage.dart';
 
 class Chats extends StatefulWidget {
   final String chatRoomID;
@@ -42,10 +47,12 @@ class _ChatsState extends State<Chats> {
   DataBaseServices dbs = new DataBaseServices();
   AutoScrollController _autoScrollController = new AutoScrollController();
   QueryDocumentSnapshot _queryDocumentSnapshot;
+  String wallpaper = "";
   TextStyle popupMenuTextStyle;
   bool isInconito = false;
   @override
   void initState() {
+    print("ChatState - Created");
     super.initState();
     popupMenuTextStyle = new TextStyle(
       fontSize: 15,
@@ -58,10 +65,20 @@ class _ChatsState extends State<Chats> {
     });
     messageFocusNode = FocusNode();
     getUserInfo();
+    dbs.getWallpapers(widget.chatRoomID).then((value) {
+      setState(() {
+        List<String> users = [Constants.uid, widget.uid];
+        users.sort();
+        if (value.isNotEmpty && value != null) {
+          wallpaper = value[users.indexOf(Constants.uid)];
+        }
+      });
+    });
   }
 
   @override
   void dispose() {
+    print("ChatState - Destroyed");
     super.dispose();
     messageController.dispose();
     messageFocusNode.dispose();
@@ -76,8 +93,6 @@ class _ChatsState extends State<Chats> {
 
   @override
   Widget build(BuildContext context) {
-    print("Chat page is building");
-    print("Are you incognito? $isInconito");
     return Scaffold(
       backgroundColor: Colors.white,
       body: WillPopScope(
@@ -115,10 +130,15 @@ class _ChatsState extends State<Chats> {
                   Container(
                     color: Colors.black.withBlue(40),
                   ),
-                  //Widget defining background of the.
+                  //Widget defining background of the chat.
                   Container(
                     decoration: BoxDecoration(
                         color: Colors.white,
+                        image: wallpaper.isEmpty
+                            ? null
+                            : DecorationImage(
+                                image: NetworkImage(wallpaper),
+                                fit: BoxFit.cover),
                         borderRadius: BorderRadius.only(
                           topLeft: Radius.circular(20),
                           topRight: Radius.circular(20),
@@ -305,15 +325,19 @@ class _ChatsState extends State<Chats> {
                       child: Stack(
                         children: [
                           Positioned(
-                            left: -15,
-                            bottom: 0,
-                            child: FlatButton(
-                                color: Colors.blue,
-                                shape: CircleBorder(),
+                            left: 5,
+                            bottom: 2,
+                            child: TextButton(
+                                style: ButtonStyle(
+                                    backgroundColor:
+                                        MaterialStateProperty.all(Colors.blue),
+                                    shape: MaterialStateProperty.all(
+                                        CircleBorder()),
+                                    minimumSize: MaterialStateProperty.all(
+                                        Size(45, 45))),
                                 onPressed: () async {
-                                  await sendImageMessage();
+                                  await sendMediaMessage();
                                 },
-                                height: 45,
                                 child: Icon(
                                   Icons.photo_camera,
                                   color: Colors.white,
@@ -347,19 +371,21 @@ class _ChatsState extends State<Chats> {
                             bottom: 0,
                             child: TextButton(
                                 style: ButtonStyle(
-                                  minimumSize: MaterialStateProperty.all(Size(50,50)),
-                                  shape: MaterialStateProperty.all(CircleBorder()),
+                                  minimumSize:
+                                      MaterialStateProperty.all(Size(50, 50)),
+                                  shape:
+                                      MaterialStateProperty.all(CircleBorder()),
                                 ),
                                 onPressed: () {
                                   if (messageController.text != "") {
                                     messageController.clear();
-                                    sendMessage('');
+                                    sendMessage();
                                   }
                                 },
                                 child: Padding(
                                   padding: const EdgeInsets.only(
                                     bottom: 8.0,
-                                    left:5,
+                                    left: 5,
                                   ),
                                   child: Transform.rotate(
                                       angle: math.pi / 0.55,
@@ -380,7 +406,7 @@ class _ChatsState extends State<Chats> {
     );
   }
 
-  sendMessage(String filePath) {
+  sendMessage({String filePath, bool isImage: false, bool isVideo: false}) {
     setState(() {
       DataBaseServices dbs = new DataBaseServices();
       Map<String, dynamic> map;
@@ -402,8 +428,13 @@ class _ChatsState extends State<Chats> {
         visible = docSnapshot.get("Users");
         map = {
           "ImageURL": '',
+          "isVideo": isVideo,
+          "VideoURL": '',
+          'isImage': isImage,
           "FilePath1": filePath,
           "FilePath2": '',
+          "ThumbnailPath1": '',
+          "ThumbnailPath2": '',
           "Time": DateTime.now(),
           "Sender": Constants.uid,
           "Reciever": widget.uid,
@@ -417,6 +448,8 @@ class _ChatsState extends State<Chats> {
       });
     });
   }
+
+  uploadFile() {}
 
   Future<int> populateSelection() async {
     QuerySnapshot snapshot = await FirebaseFirestore.instance
@@ -464,6 +497,8 @@ class _ChatsState extends State<Chats> {
     bool hidden = !chatRoomSnapshot.data.docs[index]
         .get("Visible")
         .contains(Constants.uid);
+    bool isImage = chatRoomSnapshot.data.docs[index].get("isImage");
+    bool isVideo = chatRoomSnapshot.data.docs[index].get("isVideo");
     if (isSelected.isEmpty || isSelected.length <= index) {
       return Container(
         width: MediaQuery.of(context).size.width,
@@ -476,6 +511,9 @@ class _ChatsState extends State<Chats> {
       controller: _autoScrollController,
       index: index,
       child: GestureDetector(
+          onTapDown: (details) {
+            print(details.localPosition);
+          },
           onDoubleTap: () {
             print("Double tapped on index $index");
           },
@@ -531,8 +569,9 @@ class _ChatsState extends State<Chats> {
                 _queryDocumentSnapshot = chatRoomSnapshot.data.docs[index];
               });
             },
-            child: message == ''
+            child: isImage == true
                 ? ImageMessage(
+                    key: ObjectKey(timestamp),
                     snapshot: chatRoomSnapshot.data.docs[index],
                     chatRoomID: widget.chatRoomID,
                     isSelected: isSelected[isSelected.length - 1 - index],
@@ -540,36 +579,54 @@ class _ChatsState extends State<Chats> {
                       _scrollToIndex(repliedToMessage, repliedToImageURL);
                     },
                   )
-                : TextMessage(
-                    byme: byme,
-                    hidden: hidden,
-                    index: index,
-                    isSelected: isSelected[isSelected.length - 1 - index],
-                    message: message,
-                    messagesLength: isSelected.length,
-                    repliedToMessage: repliedToMessage,
-                    repliedToSender: repliedToSender,
-                    repliedToImageURL: repliedToImageURL,
-                    timestamp: timestamp,
-                    scrollToIndex: () {
-                      _scrollToIndex(repliedToMessage, repliedToImageURL);
-                    }),
+                : (isVideo
+                    ? VideoMessage(
+                        key: ObjectKey(timestamp),
+                        snapshot: chatRoomSnapshot.data.docs[index],
+                        chatRoomID: widget.chatRoomID,
+                        isSelected: isSelected[isSelected.length - 1 - index],
+                        ontap: () {
+                          _scrollToIndex(repliedToMessage, repliedToImageURL);
+                        },
+                      )
+                    : TextMessage(
+                        key: ObjectKey(timestamp),
+                        byme: byme,
+                        hidden: hidden,
+                        index: index,
+                        isSelected: isSelected[isSelected.length - 1 - index],
+                        message: message,
+                        messagesLength: isSelected.length,
+                        repliedToMessage: repliedToMessage,
+                        repliedToSender: repliedToSender,
+                        repliedToImageURL: repliedToImageURL,
+                        timestamp: timestamp,
+                        scrollToIndex: () {
+                          _scrollToIndex(repliedToMessage, repliedToImageURL);
+                        })),
           )),
     );
     //rgb(216,242,255)
   }
 
-  Future sendImageMessage() async {
-    String path = await Navigator.push(
+  Future sendMediaMessage() async {
+    Revert revert = await Navigator.push(
         context,
         PageTransition(
             child: Capture(
               cameraDescriptions: CameraConfigurations.cameraDescriptionList,
             ),
             type: PageTransitionType.fade));
+    if (revert != null) {
+      switch (revert.media) {
+        case Media.image:
+          sendMessage(filePath: revert.path, isImage: true);
 
-    if (path != null && path.isNotEmpty) {
-      sendMessage(path);
+          break;
+        case Media.video:
+          sendMessage(filePath: revert.path, isVideo: true);
+          break;
+      }
     }
   }
 
@@ -688,13 +745,15 @@ class _ChatsState extends State<Chats> {
             ),
           ),
         ),
-        popupMenuButton(chatRoomSnapshot),
+        popupMenuButton(chatRoomSnapshot, context),
       ],
     );
   }
 
   PopupMenuButton popupMenuButton(
-      AsyncSnapshot<QuerySnapshot> chatRoomSnapshot) {
+      AsyncSnapshot<QuerySnapshot> chatRoomSnapshot, BuildContext context) {
+    double height = MediaQuery.of(context).size.height;
+    double width = MediaQuery.of(context).size.width;
     return PopupMenuButton(
         onSelected: (code) async {
           setState(() {
@@ -717,6 +776,112 @@ class _ChatsState extends State<Chats> {
               isSelected.removeWhere((element) => element);
 
               print(isSelected.toString());
+            }
+            if (code == 'wallpaper') {
+              showModalBottomSheet(
+                  context: context,
+                  builder: (context) {
+                    return Container(
+                        height: height * 0.15,
+                        width: width,
+                        decoration: BoxDecoration(
+                          color: Colors.transparent,
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              height: height * 0.15,
+                              width: width / 3,
+                              child: new Material(
+                                child: new InkWell(
+                                  onTap: () {
+                                    updateWallpaper('camera');
+                                  },
+                                  child: Column(
+                                    children: [
+                                      SizedBox(
+                                        height: height * 0.015,
+                                      ),
+                                      Container(
+                                          height: height * 0.08,
+                                          width: width * 0.25,
+                                          child:
+                                              Image.asset('assets/camera.png')),
+                                      Text('Camera',
+                                          style: TextStyle(
+                                            color: Colors.purple,
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 20,
+                                          )),
+                                    ],
+                                  ),
+                                ),
+                                color: Colors.transparent,
+                              ),
+                            ),
+                            Container(
+                              height: height * 0.15,
+                              width: width / 3,
+                              child: new Material(
+                                child: new InkWell(
+                                  onTap: () {
+                                    updateWallpaper('gallery');
+                                  },
+                                  child: Column(
+                                    children: [
+                                      SizedBox(
+                                        height: height * 0.015,
+                                      ),
+                                      Container(
+                                          height: height * 0.08,
+                                          width: width * 0.25,
+                                          child: Image.asset(
+                                              'assets/gallery.png')),
+                                      Text('Gallery',
+                                          style: TextStyle(
+                                            color: Colors.orange,
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 20,
+                                          )),
+                                    ],
+                                  ),
+                                ),
+                                color: Colors.transparent,
+                              ),
+                            ),
+                            Container(
+                              height: height * 0.15,
+                              width: width / 3,
+                              child: new Material(
+                                child: new InkWell(
+                                  onTap: () {
+                                    updateWallpaper("remove");
+                                  },
+                                  child: Column(
+                                    children: [
+                                      SizedBox(
+                                        height: height * 0.015,
+                                      ),
+                                      Container(
+                                          height: height * 0.08,
+                                          width: width * 0.25,
+                                          child: Image.asset(
+                                              'assets/delete_photo.png')),
+                                      Text('Remove',
+                                          style: TextStyle(
+                                            color: Colors.blue,
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 20,
+                                          )),
+                                    ],
+                                  ),
+                                ),
+                                color: Colors.transparent,
+                              ),
+                            ),
+                          ],
+                        ));
+                  });
             }
             if (code == 'incognito') {
               // Navigator.push(
@@ -766,12 +931,18 @@ class _ChatsState extends State<Chats> {
                 isSelected[i] = false;
               }
             }
-            if(code=='about'){
-              Navigator.push(context, PageTransition(
-                duration: Duration(seconds: 1),
-                curve: Curves.decelerate,
-                alignment: Alignment.topRight,
-                child: About(uid: widget.uid,), type: PageTransitionType.scale ),);
+            if (code == 'about') {
+              Navigator.push(
+                context,
+                PageTransition(
+                    duration: Duration(seconds: 1),
+                    curve: Curves.decelerate,
+                    alignment: Alignment.topRight,
+                    child: About(
+                      uid: widget.uid,
+                    ),
+                    type: PageTransitionType.scale),
+              );
             }
           });
         },
@@ -804,9 +975,11 @@ class _ChatsState extends State<Chats> {
                   SizedBox(
                     width: 5,
                   ),
-                  Text(getSelectedno() == isSelected.length
-                      ? "Deselect All"
-                      : "Select All",style:popupMenuTextStyle ),
+                  Text(
+                      getSelectedno() == isSelected.length
+                          ? "Deselect All"
+                          : "Select All",
+                      style: popupMenuTextStyle),
                 ],
               ),
               value: getSelectedno() == isSelected.length
@@ -833,7 +1006,7 @@ class _ChatsState extends State<Chats> {
                     SizedBox(
                       width: 5,
                     ),
-                    Text("Hide",style:popupMenuTextStyle ),
+                    Text("Hide", style: popupMenuTextStyle),
                   ],
                 )),
             PopupMenuItem(
@@ -845,7 +1018,7 @@ class _ChatsState extends State<Chats> {
                     SizedBox(
                       width: 5,
                     ),
-                    Text('Incognito',style:popupMenuTextStyle )
+                    Text('Incognito', style: popupMenuTextStyle)
                   ],
                 )),
             PopupMenuItem(
@@ -864,7 +1037,7 @@ class _ChatsState extends State<Chats> {
                     SizedBox(
                       width: 5,
                     ),
-                    Text("Wallpaper",style:popupMenuTextStyle ),
+                    Text("Wallpaper", style: popupMenuTextStyle),
                   ],
                 )),
             PopupMenuItem(
@@ -873,15 +1046,13 @@ class _ChatsState extends State<Chats> {
                 child: Row(
                   children: [
                     Transform.rotate(
-                      angle: math.pi,
-                      child: Icon(Icons.error_outline)),
+                        angle: math.pi, child: Icon(Icons.error_outline)),
                     SizedBox(
                       width: 5,
                     ),
-                    Text('About',style:popupMenuTextStyle )
+                    Text('About', style: popupMenuTextStyle)
                   ],
                 )),
-
           ];
           if (isInconito != null && isInconito) {
             menuitems.insert(
@@ -900,7 +1071,7 @@ class _ChatsState extends State<Chats> {
                       SizedBox(
                         width: 5,
                       ),
-                      Text("Unhide",style:popupMenuTextStyle ),
+                      Text("Unhide", style: popupMenuTextStyle),
                     ],
                   )),
             );
@@ -909,21 +1080,71 @@ class _ChatsState extends State<Chats> {
         });
   }
 
+  updateWallpaper(String str) {
+    List<String> users = [Constants.uid, widget.uid];
+    users.sort();
+    int index = users.indexOf(Constants.uid);
+    switch (str) {
+      case "remove":
+        {
+          Navigator.pop(context);
+          setState(() {
+            dbs.removeWallpaper(widget.chatRoomID, index);
+            wallpaper = "";
+          });
+        }
+        break;
+      case "camera":
+        {
+          dbs
+              .updateWallpaper(
+                  widget.chatRoomID, index, ImageSource.camera, context)
+              .then((value) {
+            if (value.isNotEmpty) {
+              Navigator.pop(context);
+              setState(() {
+                wallpaper = value;
+              });
+            }
+          });
+        }
+        break;
+      case "gallery":
+        {
+          dbs
+              .updateWallpaper(
+                  widget.chatRoomID, index, ImageSource.gallery, context)
+              .then((value) {
+            Navigator.pop(context);
+            if (value.isNotEmpty) {
+              setState(() {
+                wallpaper = value;
+              });
+            }
+          });
+        }
+        break;
+    }
+  }
+
   int getSelectedno() {
     return isSelected.where((element) => element).length;
   }
 
   Widget profileHeader(AsyncSnapshot<QuerySnapshot> chatRoomSnapshot) {
     return GestureDetector(
-      onTap: (){
-        Navigator.push(context,  PageTransition(
-          alignment: Alignment.topCenter,
-          duration: Duration(
-            milliseconds: 300,
-          ),
-          child: About(
-            uid: widget.uid,
-          ), type:  PageTransitionType.fade ) );
+      onTap: () {
+        Navigator.push(
+            context,
+            PageTransition(
+                alignment: Alignment.topCenter,
+                duration: Duration(
+                  milliseconds: 300,
+                ),
+                child: About(
+                  uid: widget.uid,
+                ),
+                type: PageTransitionType.fade));
       },
       child: Row(
         mainAxisAlignment: MainAxisAlignment.start,
@@ -939,7 +1160,8 @@ class _ChatsState extends State<Chats> {
           ),
           CircleAvatar(
             backgroundColor: Colors.grey,
-            backgroundImage: photoURL.isNotEmpty ? NetworkImage(photoURL) : null,
+            backgroundImage:
+                photoURL.isNotEmpty ? NetworkImage(photoURL) : null,
           ),
           SizedBox(
             width: 10,
@@ -970,7 +1192,7 @@ class _ChatsState extends State<Chats> {
             ],
           ),
           Spacer(),
-          popupMenuButton(chatRoomSnapshot),
+          popupMenuButton(chatRoomSnapshot, context),
         ],
       ),
     );
