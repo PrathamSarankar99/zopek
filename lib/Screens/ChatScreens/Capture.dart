@@ -27,7 +27,8 @@ class CaptureState extends State<Capture> with SingleTickerProviderStateMixin {
   AnimationController videoRecorderIndicator;
   int reconds; // Recorded Seconds
   bool flashOn;
-
+  bool isrecording;
+  bool ispause;
   @override
   void setState(fn) {
     if (mounted) {
@@ -38,7 +39,9 @@ class CaptureState extends State<Capture> with SingleTickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    reconds = -1;
+    isrecording = false;
+    ispause = false;
+    reconds = 0;
     flashOn = false;
     videoRecorderIndicator = AnimationController(
       duration: Duration(milliseconds: 300),
@@ -103,7 +106,7 @@ class CaptureState extends State<Capture> with SingleTickerProviderStateMixin {
                   child: _controller.buildPreview(),
                 ),
                 Visibility(
-                  visible: _controller.value.isRecordingVideo,
+                  visible: isrecording,
                   child: Positioned(
                       top: height * 0.08,
                       left: width * 0.05,
@@ -122,7 +125,7 @@ class CaptureState extends State<Capture> with SingleTickerProviderStateMixin {
                       )),
                 ),
                 Visibility(
-                  visible: _controller.value.isRecordingVideo,
+                  visible: isrecording,
                   child: Positioned(
                     bottom: height * 0.19,
                     right: 0,
@@ -151,18 +154,24 @@ class CaptureState extends State<Capture> with SingleTickerProviderStateMixin {
                             minimumSize: MaterialStateProperty.all(
                                 Size(width * 0.15, width * 0.15))),
                         onPressed: () {
-                          if (_controller.value.isRecordingVideo) {
-                            if (_controller.value.isRecordingPaused) {
+                          if (isrecording) {
+                            if (ispause) {
                               _controller.resumeVideoRecording();
+                              setState(() {
+                                ispause = false;
+                              });
                             } else {
                               _controller.pauseVideoRecording();
+                              setState(() {
+                                ispause = true;
+                              });
                             }
                           } else {
                             ToggleCameraLens();
                           }
                         },
-                        child: _controller.value.isRecordingVideo
-                            ? (_controller.value.isRecordingPaused
+                        child: isrecording
+                            ? (ispause
                                 ? Icon(
                                     Icons.play_arrow_rounded,
                                     size: 35,
@@ -217,9 +226,6 @@ class CaptureState extends State<Capture> with SingleTickerProviderStateMixin {
                                 Toggle(Tap.up);
                               },
                               onLongPressStart: (details) {
-                                setState(() {
-                                  reconds = -1;
-                                });
                                 Listen();
                                 StartVideoRecording();
                               },
@@ -291,14 +297,16 @@ class CaptureState extends State<Capture> with SingleTickerProviderStateMixin {
     }
   }
 
+  // ignore: non_constant_identifier_names
   void Listen() {
     Timer.periodic(Duration(seconds: 1), (timer) {
+      print(timer.tick);
       setState(() {
-        if (!_controller.value.isRecordingPaused) {
+        if (!ispause) {
           reconds++;
         }
       });
-      if (!_controller.value.isRecordingVideo) {
+      if (!isrecording || !mounted) {
         timer.cancel();
       }
     });
@@ -339,6 +347,7 @@ class CaptureState extends State<Capture> with SingleTickerProviderStateMixin {
   StartVideoRecording() {
     setState(() {
       factor = 0.27;
+      isrecording = true;
     });
     _controller.prepareForVideoRecording().then((value) {
       if (!_controller.value.isRecordingVideo) {
@@ -361,7 +370,7 @@ class CaptureState extends State<Capture> with SingleTickerProviderStateMixin {
     setState(() {
       factor = 0.20;
       splashColor = Colors.white;
-
+      isrecording = false;
       print("Tap up");
     });
     if (_controller.value.isRecordingVideo) {
@@ -387,7 +396,7 @@ class CaptureState extends State<Capture> with SingleTickerProviderStateMixin {
       });
     }
     setState(() {
-      reconds = -1;
+      reconds = 0;
     });
   }
 

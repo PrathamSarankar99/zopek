@@ -13,13 +13,9 @@ class SearchScreen extends StatefulWidget {
 class _SearchScreenState extends State<SearchScreen> {
   TextEditingController searchTextTEC = TextEditingController();
   QuerySnapshot snap;
-  int searchlength=0;
+  int searchlength = 0;
   DataBaseServices dataBaseServices = new DataBaseServices();
   Utils utils = new Utils();
-  @override
-  void initState() {
-    super.initState();
-  }
 
   @override
   Widget build(BuildContext context) {

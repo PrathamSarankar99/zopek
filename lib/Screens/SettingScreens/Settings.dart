@@ -23,6 +23,7 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   DataBaseServices dataBaseServices = new DataBaseServices();
   double progress = 0;
+
   @override
   Widget build(BuildContext context) {
     print('Constants : ${Constants.status}');

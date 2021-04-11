@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
@@ -9,7 +8,6 @@ import 'package:path/path.dart' as Path;
 import 'package:scroll_to_index/scroll_to_index.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:swipe_to/swipe_to.dart';
-import 'package:thumbnails/thumbnails.dart';
 import 'package:zopek/Modals/ImageSource.dart';
 import 'package:zopek/Modals/revert.dart';
 import 'package:zopek/Screens/ChatScreens/AboutView.dart';
@@ -52,6 +50,7 @@ class _ChatsState extends State<Chats> {
   String wallpaper = "";
   TextStyle popupMenuTextStyle;
   bool isInconito = false;
+  double progress = 0;
   @override
   void initState() {
     print("ChatState - Created");
@@ -98,7 +97,7 @@ class _ChatsState extends State<Chats> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: WillPopScope(
-        onWillPop: () {
+        onWillPop: () async {
           Navigator.pushReplacement(
               context, MaterialPageRoute(builder: (context) => Homepage()));
           return;
@@ -145,32 +144,32 @@ class _ChatsState extends State<Chats> {
                               )),
                         ),
                         Container(
-                            decoration: const BoxDecoration(
-                                color: Colors.transparent,
-                                borderRadius: BorderRadius.only(
-                                  topLeft: Radius.circular(20),
-                                  topRight: Radius.circular(20),
-                                )),
-                            width: MediaQuery.of(context).size.width,
-                            child: !chatRoomSnapshot.hasData
-                                ? Container()
-                                : ListView.separated(
-                                    shrinkWrap: true,
-                                    reverse: true,
-                                    controller: _autoScrollController,
-                                    physics: ClampingScrollPhysics(),
-                                    padding: const EdgeInsets.only(
-                                        top: 5, bottom: 0),
-                                    itemCount:
-                                        chatRoomSnapshot.data.docs.length,
-                                    separatorBuilder: (context, index) {
-                                      return Container();
-                                    },
-                                    itemBuilder: (context, index) {
-                                      print("Getting message $index");
-                                      return messageTile(
-                                          index, chatRoomSnapshot);
-                                    })),
+                          decoration: const BoxDecoration(
+                              color: Colors.transparent,
+                              borderRadius: BorderRadius.only(
+                                topLeft: Radius.circular(20),
+                                topRight: Radius.circular(20),
+                              )),
+                          width: MediaQuery.of(context).size.width,
+                          child: !chatRoomSnapshot.hasData
+                              ? Container()
+                              : ListView.separated(
+                                  shrinkWrap: true,
+                                  reverse: true,
+                                  controller: _autoScrollController,
+                                  physics: ClampingScrollPhysics(),
+                                  padding:
+                                      const EdgeInsets.only(top: 5, bottom: 0),
+                                  itemCount: chatRoomSnapshot.data.docs.length,
+                                  separatorBuilder: (context, index) {
+                                    return Container();
+                                  },
+                                  itemBuilder: (context, index) {
+                                    print("Getting message $index");
+
+                                    return messageTile(index, chatRoomSnapshot);
+                                  }),
+                        ),
                       ],
                     ),
                   ),
@@ -411,46 +410,44 @@ class _ChatsState extends State<Chats> {
 
   sendMessage(
       {String filePath, bool isImage: false, bool isVideo: false}) async {
-    setState(() {
-      DataBaseServices dbs = new DataBaseServices();
-      Map<String, dynamic> map;
-      isSelected.add(false);
-      List visible = [];
-      List repliedTo = _queryDocumentSnapshot == null
-          ? []
-          : [
-              _queryDocumentSnapshot.get("Sender"),
-              _queryDocumentSnapshot.get("Message"),
-              _queryDocumentSnapshot.get("ImageURL"),
-            ];
-      _queryDocumentSnapshot = null;
-      FirebaseFirestore.instance
-          .collection("ChatRooms")
-          .doc(widget.chatRoomID)
-          .get()
-          .then((docSnapshot) async {
-        visible = docSnapshot.get("Users");
-        map = {
-          "ImageURL": '',
-          "isVideo": isVideo,
-          "VideoURL": '',
-          'isImage': isImage,
-          "FilePath1": filePath,
-          "FilePath2": '',
-          "ThumbnailPath1": '',
-          "ThumbnailPath2": '',
-          "Time": DateTime.now(),
-          "Sender": Constants.uid,
-          "Reciever": widget.uid,
-          "Message": Message.message.trim(),
-          "Visible": visible,
-          "RepliedTo": repliedTo,
-        };
-        print('ChatRoomID is : ${widget.chatRoomID}');
-        await dbs.sendMessage(widget.chatRoomID, map);
-        Message.message = "";
-        print("Message : A new message sent");
-      });
+    DataBaseServices dbs = new DataBaseServices();
+    Map<String, dynamic> map;
+    isSelected.add(false);
+    List visible = [];
+    List repliedTo = _queryDocumentSnapshot == null
+        ? []
+        : [
+            _queryDocumentSnapshot.get("Sender"),
+            _queryDocumentSnapshot.get("Message"),
+            _queryDocumentSnapshot.get("ImageURL"),
+          ];
+    _queryDocumentSnapshot = null;
+    FirebaseFirestore.instance
+        .collection("ChatRooms")
+        .doc(widget.chatRoomID)
+        .get()
+        .then((docSnapshot) async {
+      visible = docSnapshot.get("Users");
+      map = {
+        "ImageURL": '',
+        "isVideo": isVideo,
+        "VideoURL": '',
+        'isImage': isImage,
+        "FilePath1": filePath,
+        "FilePath2": '',
+        "ThumbnailPath1": '',
+        "ThumbnailPath2": '',
+        "Time": DateTime.now(),
+        "Sender": Constants.uid,
+        "Reciever": widget.uid,
+        "Message": Message.message.trim(),
+        "Visible": visible,
+        "RepliedTo": repliedTo,
+      };
+      print('ChatRoomID is : ${widget.chatRoomID}');
+      await dbs.sendMessage(widget.chatRoomID, map);
+      Message.message = "";
+      print("Message : A new message sent");
     });
     if (!isImage && !isVideo) {
       print("Message : It retured");
@@ -461,34 +458,39 @@ class _ChatsState extends State<Chats> {
         "${widget.chatRoomID}/${Constants.uid}/images/${Path.basename(filePath)}");
     UploadTask uploadTask = reference.putFile(File(filePath));
     uploadTask.snapshotEvents.listen((event) {
-      setState(() {
-        print(
-            "Progress ${event.bytesTransferred.toDouble() / event.totalBytes.toDouble()}");
-      });
+      if (mounted) {
+        setState(() {
+          progress =
+              event.bytesTransferred.toDouble() / event.totalBytes.toDouble();
+          print("Progress setState :$progress");
+        });
+      } else {
+        progress =
+            event.bytesTransferred.toDouble() / event.totalBytes.toDouble();
+        print("Progress unset :$progress");
+      }
     }).onError((e) {
       print('There is an error : $e');
     });
     TaskSnapshot taskSnapshot = await uploadTask.whenComplete(() async {
       String downloadURL = await reference.getDownloadURL();
-      setState(() {
-        FirebaseFirestore.instance
-            .collection("ChatRooms")
-            .doc(widget.chatRoomID)
-            .collection("Messages")
-            .where("FilePath1", isEqualTo: filePath)
-            .limit(1)
-            .get()
-            .then((value) {
-          if (isImage) {
-            value.docs[0].reference.update({
-              "ImageURL": downloadURL,
-            });
-          } else if (isVideo) {
-            value.docs[0].reference.update({
-              "VideoURL": downloadURL,
-            });
-          }
-        });
+      FirebaseFirestore.instance
+          .collection("ChatRooms")
+          .doc(widget.chatRoomID)
+          .collection("Messages")
+          .where("FilePath1", isEqualTo: filePath)
+          .limit(1)
+          .get()
+          .then((value) {
+        if (isImage) {
+          value.docs[0].reference.update({
+            "ImageURL": downloadURL,
+          });
+        } else if (isVideo) {
+          value.docs[0].reference.update({
+            "VideoURL": downloadURL,
+          });
+        }
       });
     });
   }
@@ -542,7 +544,7 @@ class _ChatsState extends State<Chats> {
         margin: EdgeInsets.only(bottom: 5, top: 5),
         width: MediaQuery.of(context).size.width,
         height: 200,
-        color: Colors.pink,
+        color: Colors.transparent,
       );
     }
     return AutoScrollTag(
@@ -736,18 +738,16 @@ class _ChatsState extends State<Chats> {
                         onPressed: () async {
                           Navigator.pop(context);
                           print(isSelected.toString());
-                          setState(() {
-                            for (int i = 0; i < isSelected.length; i++) {
-                              if (isSelected[i]) {
-                                chatRoomSnapshot.data
-                                    .docs[isSelected.length - 1 - i].reference
-                                    .delete()
-                                    .then((value) => print(
-                                        "Message deletion successful at index ${isSelected.length - 1 - i}}"));
-                              }
+                          for (int i = 0; i < isSelected.length; i++) {
+                            if (isSelected[i]) {
+                              chatRoomSnapshot.data
+                                  .docs[isSelected.length - 1 - i].reference
+                                  .delete()
+                                  .then((value) => print(
+                                      "Message deletion successful at index ${isSelected.length - 1 - i}}"));
                             }
-                            isSelected.removeWhere((element) => element);
-                          });
+                          }
+                          isSelected.removeWhere((element) => element);
 
                           print(isSelected.toString());
                         },

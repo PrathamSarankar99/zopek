@@ -83,6 +83,9 @@ class DataBaseServices {
           UploadTask uploadTask = reference.putFile(File(path));
           TaskSnapshot taskSnapshot = await uploadTask.whenComplete(() async {
             downloadURL = await reference.getDownloadURL();
+            if (list.isEmpty) {
+              list = List.generate(2, (index) => "");
+            }
             list[index] = downloadURL;
             snap.reference.update({
               "Wallpapers": list,
