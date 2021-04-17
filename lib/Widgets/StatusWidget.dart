@@ -53,19 +53,19 @@ class _StatusWidgetState extends State<StatusWidget> {
               setState(() {
                 factor = 0.1;
               });
-              // Navigator.push(
-              //     context,
-              //     PageTransition(
-              //         child: HeadStatus(
-              //           sources: [
-              //             "https://firebasestorage.googleapis.com/v0/b/zopek-de839.appspot.com/o/1stVideo.mp4?alt=media&token=c6f78921-1333-4a46-a1f8-06b7d5403ca4",
-              //             "https://firebasestorage.googleapis.com/v0/b/zopek-de839.appspot.com/o/2ndVideo.mp4?alt=media&token=a5b4e523-384f-4f36-8869-7485b08297bd",
-              //             "https://firebasestorage.googleapis.com/v0/b/zopek-de839.appspot.com/o/3rdVideo.mp4?alt=media&token=778fcda3-8159-4b46-89a5-74faed0ad69a",
-              //             "https://firebasestorage.googleapis.com/v0/b/zopek-de839.appspot.com/o/2ndVideo.mp4?alt=media&token=a5b4e523-384f-4f36-8869-7485b08297bd",
-              //           ],
-              //           uid: widget.uid,
-              //         ),
-              //         type: PageTransitionType.fade));
+              Navigator.push(
+                  context,
+                  PageTransition(
+                      child: HeadStatus(
+                        sources: [
+                          "https://firebasestorage.googleapis.com/v0/b/zopek-de839.appspot.com/o/NOraDTGaQSZbIEszidCujw1AEym2%26VNCkHG9n2FeByZDn77ijQszdcYr2%2FNOraDTGaQSZbIEszidCujw1AEym2%2Fvideos%2FVID_2021-04-16%2005-44-30.mp4?alt=media&token=3382392d-779d-400a-b0b7-c0026690c2d2",
+                          "https://firebasestorage.googleapis.com/v0/b/zopek-de839.appspot.com/o/NOraDTGaQSZbIEszidCujw1AEym2%26VNCkHG9n2FeByZDn77ijQszdcYr2%2FNOraDTGaQSZbIEszidCujw1AEym2%2Fvideos%2FVID_2021-04-16%2005-44-30.mp4?alt=media&token=3382392d-779d-400a-b0b7-c0026690c2d2",
+                          "https://firebasestorage.googleapis.com/v0/b/zopek-de839.appspot.com/o/NOraDTGaQSZbIEszidCujw1AEym2%26VNCkHG9n2FeByZDn77ijQszdcYr2%2FNOraDTGaQSZbIEszidCujw1AEym2%2Fvideos%2FVID_2021-04-16%2005-44-30.mp4?alt=media&token=3382392d-779d-400a-b0b7-c0026690c2d2",
+                          "https://firebasestorage.googleapis.com/v0/b/zopek-de839.appspot.com/o/NOraDTGaQSZbIEszidCujw1AEym2%26VNCkHG9n2FeByZDn77ijQszdcYr2%2FNOraDTGaQSZbIEszidCujw1AEym2%2Fvideos%2FVID_2021-04-16%2005-44-30.mp4?alt=media&token=3382392d-779d-400a-b0b7-c0026690c2d2",
+                        ],
+                        uid: widget.uid,
+                      ),
+                      type: PageTransitionType.fade));
             },
             child: Container(
               padding: EdgeInsets.all(2),

@@ -15,11 +15,25 @@ import 'package:zopek/Screens/ChatScreens/Capture.dart';
 import 'package:zopek/Services/Utils.dart';
 
 class DataBaseServices {
-  uploadUserInfo(Map<String, dynamic> map, String uid) {
+  static uploadUserInfo(Map<String, dynamic> map, String uid) {
     FirebaseFirestore.instance.collection("Users").doc(uid).set(map);
   }
 
-  Future<List<dynamic>> getWallpapers(String chatRoomID) async {
+  static setTypingStatus(String chatRoomID, String uid, bool typingbool) async {
+    List users = [Constants.uid, uid];
+    users.sort();
+    DocumentSnapshot document = await FirebaseFirestore.instance
+        .collection("ChatRooms")
+        .doc(chatRoomID)
+        .get();
+    List<bool> typing = List<bool>.from(document.get("Typing"));
+    typing[users.indexOf(Constants.uid)] = typingbool;
+    document.reference.update({
+      "Typing": typing,
+    });
+  }
+
+  static Future<List<dynamic>> getWallpapers(String chatRoomID) async {
     DocumentSnapshot snap = await FirebaseFirestore.instance
         .collection("ChatRooms")
         .doc(chatRoomID)
@@ -27,7 +41,7 @@ class DataBaseServices {
     return snap.get("Wallpapers");
   }
 
-  removeWallpaper(String chatRoomID, int index) async {
+  static removeWallpaper(String chatRoomID, int index) async {
     DocumentSnapshot snap = await FirebaseFirestore.instance
         .collection("ChatRooms")
         .doc(chatRoomID)
@@ -42,7 +56,14 @@ class DataBaseServices {
     });
   }
 
-  Future<String> updateWallpaper(String chatRoomID, int index,
+  static Stream<DocumentSnapshot> typingStatusStream(String chatRoomID) {
+    return FirebaseFirestore.instance
+        .collection("ChatRooms")
+        .doc(chatRoomID)
+        .snapshots();
+  }
+
+  static Future<String> updateWallpaper(String chatRoomID, int index,
       ImageSource source, BuildContext context) async {
     DocumentSnapshot snap = await FirebaseFirestore.instance
         .collection("ChatRooms")
@@ -97,7 +118,7 @@ class DataBaseServices {
     return downloadURL;
   }
 
-  addMessagingTokens(String token, String uid) async {
+  static addMessagingTokens(String token, String uid) async {
     List<dynamic> existingTokens = [];
     await FirebaseFirestore.instance
         .collection("Users")
@@ -115,7 +136,7 @@ class DataBaseServices {
     });
   }
 
-  removeMessagingTokens(String token, String uid) async {
+  static removeMessagingTokens(String token, String uid) async {
     List<dynamic> existingTokens = [];
     await FirebaseFirestore.instance
         .collection("Users")
@@ -130,32 +151,32 @@ class DataBaseServices {
     });
   }
 
-  Future getUserBySearchText(String searchText) async {
+  static Future getUserBySearchText(String searchText) async {
     return await FirebaseFirestore.instance
         .collection("Users")
         .where("SearchKeywords", arrayContains: searchText)
         .get();
   }
 
-  Future getUserNameByEmail(String email) async {
+  static Future getUserNameByEmail(String email) async {
     return await FirebaseFirestore.instance
         .collection("Users")
         .where("Email", isEqualTo: email)
         .get();
   }
 
-  Stream<DocumentSnapshot> getUserByID(String uid) {
+  static Stream<DocumentSnapshot> getUserByID(String uid) {
     return FirebaseFirestore.instance.collection("Users").doc(uid).snapshots();
   }
 
-  createChatRoom(String chatRoomID, chatRoomMap) async {
+  static createChatRoom(String chatRoomID, chatRoomMap) async {
     await FirebaseFirestore.instance
         .collection("ChatRooms")
         .doc(chatRoomID)
         .set(chatRoomMap);
   }
 
-  updateUsername(String username) {
+  static updateUsername(String username) {
     List<String> searchKeywords = Utils().generateKeywordList(username);
     FirebaseFirestore.instance.collection('Users').doc(Constants.uid).update({
       'UserName': username,
@@ -163,19 +184,19 @@ class DataBaseServices {
     });
   }
 
-  updateBio(String status) {
+  static updateBio(String status) {
     FirebaseFirestore.instance.collection('Users').doc(Constants.uid).update({
       'Status': status,
     });
   }
 
-  updateProfilePicture(String url) {
+  static updateProfilePicture(String url) {
     FirebaseFirestore.instance.collection('Users').doc(Constants.uid).update({
       'PhotoURL': url,
     });
   }
 
-  Future<bool> setPassword(String password, String uid) async {
+  static Future<bool> setPassword(String password, String uid) async {
     DocumentSnapshot documentSnapshot =
         await FirebaseFirestore.instance.collection('Users').doc(uid).get();
     documentSnapshot.reference.update({"Password": password}).catchError((e) {
@@ -184,13 +205,13 @@ class DataBaseServices {
     return true;
   }
 
-  Future<String> getPassword(String uid) async {
+  static Future<String> getPassword(String uid) async {
     DocumentSnapshot documentSnapshot =
         await FirebaseFirestore.instance.collection('Users').doc(uid).get();
     return documentSnapshot.get("Password");
   }
 
-  updateUserPhoneNo(String newPhoneNumber) async {
+  static updateUserPhoneNo(String newPhoneNumber) async {
     User user = FirebaseAuth.instance.currentUser;
     DocumentSnapshot snapshot = await FirebaseFirestore.instance
         .collection("Users")
@@ -201,7 +222,7 @@ class DataBaseServices {
     });
   }
 
-  Stream<QuerySnapshot> getChatRoomStreamOfMessagesExHidden(
+  static Stream<QuerySnapshot> getChatRoomStreamOfMessagesExHidden(
       String chatRoomID, String username) {
     return FirebaseFirestore.instance
         .collection("ChatRooms")
@@ -212,7 +233,7 @@ class DataBaseServices {
         .snapshots();
   }
 
-  Stream<QuerySnapshot> getChatRoomStreamOfMessages(
+  static Stream<QuerySnapshot> getChatRoomStreamOfMessages(
       String chatRoomID, String username) {
     return FirebaseFirestore.instance
         .collection("ChatRooms")
@@ -222,7 +243,7 @@ class DataBaseServices {
         .snapshots();
   }
 
-  Future<void> sendMessage(
+  static Future<void> sendMessage(
       String chatRoomID, Map<String, dynamic> messageMap) async {
     return await FirebaseFirestore.instance
         .collection("ChatRooms")
@@ -232,11 +253,15 @@ class DataBaseServices {
         .set(messageMap);
   }
 
-  Stream<QuerySnapshot> getExistingChatRooms(String username) {
+  // static getExistingStatus(){
+  //   FirebaseFirestore.instance.collection("Users").
+  // }
+
+  static Stream<QuerySnapshot> getExistingChatRooms(String uid) {
     return FirebaseFirestore.instance
         .collection("ChatRooms")
-        .where("Users", arrayContains: username)
         .orderBy("LastMessageTime", descending: true)
+        .where("Users", arrayContains: uid)
         .snapshots();
   }
 }

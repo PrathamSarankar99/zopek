@@ -16,7 +16,7 @@ class _HeadStatusState extends State<HeadStatus>
     with SingleTickerProviderStateMixin {
   VideoPlayerController vipC;
   AnimationController animC;
-  DataBaseServices dbs;
+
   int pointer = 0;
   @override
   void setState(fn) {
@@ -27,7 +27,6 @@ class _HeadStatusState extends State<HeadStatus>
 
   @override
   void initState() {
-    dbs = new DataBaseServices();
     vipC = VideoPlayerController.network(
       widget.sources[pointer],
       videoPlayerOptions: VideoPlayerOptions(
@@ -39,6 +38,8 @@ class _HeadStatusState extends State<HeadStatus>
       duration: Duration(milliseconds: 400),
       vsync: this,
     );
+
+    vipC.addListener(() => setState(() {}));
     vipC.addListener(playNext);
     vipC.initialize().then((_) => setState(() {}));
     vipC.play();
@@ -46,13 +47,14 @@ class _HeadStatusState extends State<HeadStatus>
   }
 
   void playNext() {
+    if (pointer + 1 >= widget.sources.length) {
+      return;
+    }
     if (vipC.value.position == vipC.value.duration) {
+      print("Pointers  : Printing the pointer: $pointer");
       setState(() {
         pointer++;
-        if (pointer > widget.sources.length) {
-          return;
-        }
-        print("Pointer added $pointer");
+        print("Pointers added $pointer");
         vipC = VideoPlayerController.network(
           widget.sources[pointer],
           videoPlayerOptions: VideoPlayerOptions(
@@ -111,18 +113,14 @@ class _HeadStatusState extends State<HeadStatus>
 
     return Scaffold(
       body: StreamBuilder<DocumentSnapshot>(
-          stream: dbs.getUserByID(widget.uid),
+          stream: DataBaseServices.getUserByID(widget.uid),
           builder: (context, snapshot) {
             return Stack(
               children: [
                 Container(
                   color: Colors.blue,
                 ),
-                Container(
-                  alignment: Alignment.center,
-                  child: Container(
-                      width: width, height: width, child: VideoPlayer(vipC)),
-                ),
+                VideoPlayer(vipC),
                 Positioned(
                     height: width * 0.01,
                     width: width,
@@ -141,6 +139,8 @@ class _HeadStatusState extends State<HeadStatus>
                             milliseconds: (currenDuration.inMilliseconds +
                                     ((details.delta.dx) * 10))
                                 .toInt()));
+                        await vipC.pause();
+                        await vipC.play();
                       },
                       onTap: () {
                         pauseAndPlay();

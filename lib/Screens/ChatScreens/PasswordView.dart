@@ -19,7 +19,7 @@ class PasswordView extends StatefulWidget {
 class _PasswordViewState extends State<PasswordView> {
   var selectedindex = 0;
   String code = ' ';
-  DataBaseServices dataBaseServices = new DataBaseServices();
+
   String alert = '';
   @override
   void setState(fn) {
@@ -171,11 +171,13 @@ class _PasswordViewState extends State<PasswordView> {
                                               TextButton.icon(
                                                   onPressed: () async {
                                                     setState(() {
-                                                      dataBaseServices
+                                                      DataBaseServices
                                                           .setPassword('',
                                                               Constants.uid);
                                                       AuthServices().signOut();
-                                                      Navigator.of(context).popUntil((route) => route.isFirst);
+                                                      Navigator.of(context)
+                                                          .popUntil((route) =>
+                                                              route.isFirst);
                                                       Navigator.pushReplacement(
                                                           context,
                                                           PageTransition(
@@ -393,13 +395,13 @@ class _PasswordViewState extends State<PasswordView> {
                                                           double.maxFinite))),
                                           onPressed: () async {
                                             if (widget.password == '') {
-                                              await dataBaseServices
+                                              await DataBaseServices
                                                   .setPassword(
                                                       code, Constants.uid);
                                               Navigator.pop(context, false);
                                             } else {
-                                              dataBaseServices
-                                                  .getPassword(Constants.uid)
+                                              DataBaseServices.getPassword(
+                                                      Constants.uid)
                                                   .then((password) {
                                                 if (password == code) {
                                                   Navigator.pop(context, true);

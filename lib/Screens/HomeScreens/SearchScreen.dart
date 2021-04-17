@@ -14,7 +14,7 @@ class _SearchScreenState extends State<SearchScreen> {
   TextEditingController searchTextTEC = TextEditingController();
   QuerySnapshot snap;
   int searchlength = 0;
-  DataBaseServices dataBaseServices = new DataBaseServices();
+
   Utils utils = new Utils();
 
   @override
@@ -66,7 +66,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
   void onSubmitted(String value) async {
     setState(() {});
-    await dataBaseServices.getUserBySearchText(value).then((val) {
+    await DataBaseServices.getUserBySearchText(value).then((val) {
       setState(() {
         snap = val;
         searchlength = val.docs.length;
@@ -112,7 +112,7 @@ class _SearchScreenState extends State<SearchScreen> {
     String chatRoomID = utils.getChatRoomID(snap.docs[index].id, Constants.uid);
     List<String> users = [snap.docs[index].id, Constants.uid];
     users.sort();
-    DataBaseServices().createChatRoom(
+    DataBaseServices.createChatRoom(
         chatRoomID, utils.mapForChatRoom(users, Timestamp.now()));
     Navigator.pushReplacement(
         context,

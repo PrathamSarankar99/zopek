@@ -8,8 +8,8 @@ class Utils {
       String email,
       String photoURL,
       String phoneNo,
-      List<String> searchKeywords) async{
-    List<String> token = [await FirebaseMessaging.instance.getToken()];         
+      List<String> searchKeywords) async {
+    List<String> token = [await FirebaseMessaging.instance.getToken()];
     return {
       "UserName": username,
       "FullName": fullName,
@@ -19,7 +19,7 @@ class Utils {
       "SearchKeywords": searchKeywords,
       "Password": '',
       "Status": '',
-      "MessagingTokens":token,
+      "MessagingTokens": token,
     };
   }
 
@@ -53,9 +53,10 @@ class Utils {
   Map<String, dynamic> mapForChatRoom(List<String> users, Timestamp timestamp) {
     List<String> wallpapers = [];
     return {
+      "Typing": [false, false],
       "Users": users,
       "LastMessageTime": timestamp,
-      "Wallpapers" : wallpapers,
+      "Wallpapers": wallpapers,
     };
   }
 }

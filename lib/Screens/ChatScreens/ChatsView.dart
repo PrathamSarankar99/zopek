@@ -1,13 +1,17 @@
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:keyboard_visibility/keyboard_visibility.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:path/path.dart' as Path;
 import 'package:scroll_to_index/scroll_to_index.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:swipe_to/swipe_to.dart';
+import 'package:thumbnails/thumbnails.dart';
+import 'package:video_compress/video_compress.dart';
 import 'package:zopek/Modals/ImageSource.dart';
 import 'package:zopek/Modals/revert.dart';
 import 'package:zopek/Screens/ChatScreens/AboutView.dart';
@@ -16,12 +20,15 @@ import 'package:zopek/Screens/ChatScreens/PasswordView.dart';
 import 'package:zopek/Screens/HomeScreens/Homepage.dart';
 import 'package:zopek/Modals/Camera.dart';
 import 'package:zopek/Modals/Constants.dart';
-import 'package:zopek/Services/Utils.dart';
+import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:zopek/Services/database.dart';
+import 'package:zopek/Services/realtime_database.dart';
 import 'dart:math' as math;
 import 'package:zopek/Widgets/ChatScreenWidgets/ImageMessage.dart';
 import 'package:zopek/Widgets/ChatScreenWidgets/TextMessage.dart';
 import 'package:zopek/Widgets/ChatScreenWidgets/VideoMessage.dart';
+import 'package:zopek/main.dart';
 
 class Chats extends StatefulWidget {
   final String chatRoomID;
@@ -38,23 +45,41 @@ class Message {
 }
 
 class _ChatsState extends State<Chats> {
+  Box chatRoomBox;
   TextEditingController messageController = new TextEditingController();
   FocusNode messageFocusNode;
   List<bool> isSelected = [];
   String photoURL = "";
   String username = "";
   String email = "";
-  DataBaseServices dbs = new DataBaseServices();
+  String uid = "";
   AutoScrollController _autoScrollController = new AutoScrollController();
   QueryDocumentSnapshot _queryDocumentSnapshot;
   String wallpaper = "";
   TextStyle popupMenuTextStyle;
   bool isInconito = false;
   double progress = 0;
+  KeyboardVisibilityNotification keyboardVisibilityNotification;
+  int subscribingid;
+
   @override
   void initState() {
-    print("ChatState - Created");
     super.initState();
+
+    keyboardVisibilityNotification = new KeyboardVisibilityNotification();
+    subscribingid = keyboardVisibilityNotification.addNewListener(
+      onChange: (bool visible) {
+        print("Printing chatRoomIDs ${widget.chatRoomID}");
+        DataBaseServices.setTypingStatus(
+            widget.chatRoomID, widget.uid, visible);
+      },
+    );
+    Hive.openBox(widget.chatRoomID).then((value) {
+      setState(() {
+        chatRoomBox = value;
+      });
+    });
+    print("ChatState - Created");
     popupMenuTextStyle = new TextStyle(
       fontSize: 15,
     );
@@ -65,8 +90,11 @@ class _ChatsState extends State<Chats> {
       });
     });
     messageFocusNode = FocusNode();
+    messageFocusNode.addListener(() {
+      print("Has focus : ${messageFocusNode.hasFocus}");
+    });
     getUserInfo();
-    dbs.getWallpapers(widget.chatRoomID).then((value) {
+    DataBaseServices.getWallpapers(widget.chatRoomID).then((value) {
       setState(() {
         List<String> users = [Constants.uid, widget.uid];
         users.sort();
@@ -81,6 +109,7 @@ class _ChatsState extends State<Chats> {
   void dispose() {
     print("ChatState - Destroyed");
     super.dispose();
+    keyboardVisibilityNotification.removeListener(subscribingid);
     messageController.dispose();
     messageFocusNode.dispose();
   }
@@ -98,18 +127,18 @@ class _ChatsState extends State<Chats> {
       backgroundColor: Colors.white,
       body: WillPopScope(
         onWillPop: () async {
-          Navigator.pushReplacement(
-              context, MaterialPageRoute(builder: (context) => Homepage()));
+          Navigator.pushReplacement(context,
+              MaterialPageRoute(builder: (context) => AuthenticityDecider()));
           return;
         },
         child: StreamBuilder<QuerySnapshot>(
             stream: isInconito == null
-                ? dbs.getChatRoomStreamOfMessagesExHidden(
+                ? DataBaseServices.getChatRoomStreamOfMessagesExHidden(
                     widget.chatRoomID, Constants.uid)
                 : (isInconito
-                    ? dbs.getChatRoomStreamOfMessages(
+                    ? DataBaseServices.getChatRoomStreamOfMessages(
                         widget.chatRoomID, Constants.uid)
-                    : dbs.getChatRoomStreamOfMessagesExHidden(
+                    : DataBaseServices.getChatRoomStreamOfMessagesExHidden(
                         widget.chatRoomID, Constants.uid)),
             builder: (context, chatRoomSnapshot) {
               return Column(
@@ -349,6 +378,7 @@ class _ChatsState extends State<Chats> {
                                   width:
                                       MediaQuery.of(context).size.width * 0.68,
                                   child: TextField(
+                                    autofocus: false,
                                     onChanged: (str) {
                                       Message.message = str;
                                       _autoScrollController.jumpTo(
@@ -445,52 +475,65 @@ class _ChatsState extends State<Chats> {
         "RepliedTo": repliedTo,
       };
       print('ChatRoomID is : ${widget.chatRoomID}');
-      await dbs.sendMessage(widget.chatRoomID, map);
-      Message.message = "";
-      print("Message : A new message sent");
-    });
-    if (!isImage && !isVideo) {
-      print("Message : It retured");
-      return;
-    }
-    String fileType = isImage ? "images" : "videos";
-    Reference reference = FirebaseStorage.instance.ref().child(
-        "${widget.chatRoomID}/${Constants.uid}/images/${Path.basename(filePath)}");
-    UploadTask uploadTask = reference.putFile(File(filePath));
-    uploadTask.snapshotEvents.listen((event) {
-      if (mounted) {
-        setState(() {
-          progress =
-              event.bytesTransferred.toDouble() / event.totalBytes.toDouble();
-          print("Progress setState :$progress");
-        });
-      } else {
-        progress =
-            event.bytesTransferred.toDouble() / event.totalBytes.toDouble();
-        print("Progress unset :$progress");
-      }
-    }).onError((e) {
-      print('There is an error : $e');
-    });
-    TaskSnapshot taskSnapshot = await uploadTask.whenComplete(() async {
-      String downloadURL = await reference.getDownloadURL();
-      FirebaseFirestore.instance
-          .collection("ChatRooms")
-          .doc(widget.chatRoomID)
-          .collection("Messages")
-          .where("FilePath1", isEqualTo: filePath)
-          .limit(1)
-          .get()
-          .then((value) {
-        if (isImage) {
-          value.docs[0].reference.update({
-            "ImageURL": downloadURL,
-          });
+      await DataBaseServices.sendMessage(widget.chatRoomID, map)
+          .then((value) async {
+        Message.message = "";
+        print("Message : A new message sent");
+        QuerySnapshot snapshot = await FirebaseFirestore.instance
+            .collection("ChatRooms")
+            .doc(widget.chatRoomID)
+            .collection("Messages")
+            .where("FilePath1", isEqualTo: filePath)
+            .limit(1)
+            .get();
+        String key1 = "${snapshot.docs[0].get("FilePath1")}_Thumbnail1";
+        String key2 = "${snapshot.docs[0].get("FilePath1")}_Thumbnail2";
+        if (!isImage && !isVideo) {
+          print("Message : It retured");
+          return;
         } else if (isVideo) {
-          value.docs[0].reference.update({
-            "VideoURL": downloadURL,
-          });
+          print("Thumbnail started");
+          if (snapshot.docs[0].get("Sender") == Constants.uid) {
+            String path = await Thumbnails.getThumbnail(
+              videoFile: snapshot.docs[0].get("FilePath1"),
+              imageType: ThumbFormat.PNG,
+              quality: 100,
+            );
+            Hive.box(widget.chatRoomID).put(key1, path);
+          } else {
+            String path = await Thumbnails.getThumbnail(
+              videoFile: snapshot.docs[0].get("VideoURL"),
+              imageType: ThumbFormat.JPEG,
+              quality: 100,
+            );
+            Hive.box(widget.chatRoomID).put(key2, path);
+          }
         }
+        String fileType = isImage ? "images" : "videos";
+        Reference reference = FirebaseStorage.instance.ref().child(
+            "${widget.chatRoomID}/${Constants.uid}/$fileType/${Path.basename(filePath)}");
+        UploadTask uploadTask = reference.putFile(File(filePath));
+        uploadTask.snapshotEvents.listen((event) {
+          double progress =
+              event.bytesTransferred.toDouble() / event.totalBytes.toDouble();
+          chatRoomBox.put(filePath, progress);
+          print(chatRoomBox.get(filePath));
+        }).onError((e) {
+          print('There is an error : $e');
+        });
+        TaskSnapshot taskSnapshot = await uploadTask.whenComplete(() async {
+          String downloadURL = await reference.getDownloadURL();
+
+          if (isImage) {
+            snapshot.docs[0].reference.update({
+              "ImageURL": downloadURL,
+            });
+          } else if (isVideo) {
+            snapshot.docs[0].reference.update({
+              "VideoURL": downloadURL,
+            });
+          }
+        });
       });
     });
   }
@@ -508,9 +551,10 @@ class _ChatsState extends State<Chats> {
   }
 
   Future getUserInfo() async {
-    Stream<DocumentSnapshot> snap = dbs.getUserByID(widget.uid);
+    Stream<DocumentSnapshot> snap = DataBaseServices.getUserByID(widget.uid);
     await snap.first.then((value) {
       setState(() {
+        uid = value.id;
         photoURL = value.get("PhotoURL");
         username = value.get("UserName").toString().length > 15
             ? '${value.get("UserName").toString().substring(0, 15)}...'
@@ -665,7 +709,14 @@ class _ChatsState extends State<Chats> {
 
           break;
         case Media.video:
-          sendMessage(filePath: revert.path, isVideo: true);
+          VideoCompress.compressVideo(
+            revert.path,
+            deleteOrigin: true,
+            includeAudio: true,
+            quality: VideoQuality.DefaultQuality,
+          ).then((value) {
+            sendMessage(filePath: value.path, isVideo: true);
+          });
           break;
       }
     }
@@ -736,6 +787,7 @@ class _ChatsState extends State<Chats> {
                     actions: [
                       TextButton(
                         onPressed: () async {
+                          messageFocusNode.nextFocus();
                           Navigator.pop(context);
                           print(isSelected.toString());
                           for (int i = 0; i < isSelected.length; i++) {
@@ -795,6 +847,7 @@ class _ChatsState extends State<Chats> {
     double width = MediaQuery.of(context).size.width;
     return PopupMenuButton(
         onSelected: (code) async {
+          messageFocusNode.nextFocus();
           setState(() {
             if (code == 'unhide') {
               for (int i = 0; i < isSelected.length; i++) {
@@ -923,12 +976,7 @@ class _ChatsState extends State<Chats> {
                   });
             }
             if (code == 'incognito') {
-              // Navigator.push(
-              //     context,
-              //     MaterialPageRoute(
-              //       builder: (context) => PasswordView(),
-              //     ));
-              dbs.getPassword(Constants.uid).then((password) {
+              DataBaseServices.getPassword(Constants.uid).then((password) {
                 Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -1128,15 +1176,14 @@ class _ChatsState extends State<Chats> {
         {
           Navigator.pop(context);
           setState(() {
-            dbs.removeWallpaper(widget.chatRoomID, index);
+            DataBaseServices.removeWallpaper(widget.chatRoomID, index);
             wallpaper = "";
           });
         }
         break;
       case "camera":
         {
-          dbs
-              .updateWallpaper(
+          DataBaseServices.updateWallpaper(
                   widget.chatRoomID, index, ImageSource.camera, context)
               .then((value) {
             if (value.isNotEmpty) {
@@ -1150,8 +1197,7 @@ class _ChatsState extends State<Chats> {
         break;
       case "gallery":
         {
-          dbs
-              .updateWallpaper(
+          DataBaseServices.updateWallpaper(
                   widget.chatRoomID, index, ImageSource.gallery, context)
               .then((value) {
             Navigator.pop(context);
@@ -1170,70 +1216,133 @@ class _ChatsState extends State<Chats> {
     return isSelected.where((element) => element).length;
   }
 
+  String formatTime(Timestamp timeStamp) {
+    String value = '';
+    DateTime current = DateTime.now();
+    DateTime comparer = timeStamp.toDate();
+
+    if (((comparer.day == current.day) &&
+        (comparer.month == current.month) &&
+        (comparer.year == current.year))) {
+      Duration duration = comparer.difference(current);
+      value =
+          "${comparer.hour.toString().padLeft(2, '0')}:${comparer.minute.toString().padLeft(2, '0')}";
+    } else {
+      value =
+          "${comparer.day}/${comparer.month}/${comparer.year} - ${comparer.hour.toString().padLeft(2, '0')}:${comparer.minute.toString().padLeft(2, '0')}";
+    }
+    return value;
+  }
+
   Widget profileHeader(AsyncSnapshot<QuerySnapshot> chatRoomSnapshot) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-            context,
-            PageTransition(
-                alignment: Alignment.topCenter,
-                duration: Duration(
-                  milliseconds: 300,
-                ),
-                child: About(
-                  uid: widget.uid,
-                ),
-                type: PageTransitionType.fade));
-      },
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: <Widget>[
-          IconButton(
-            icon: Icon(Icons.arrow_back),
-            color: Color.fromRGBO(228, 227, 227, 1),
-            onPressed: () {
-              Navigator.pushReplacement(
-                  context, MaterialPageRoute(builder: (context) => Homepage()));
-            },
-          ),
-          CircleAvatar(
-            backgroundColor: Colors.grey,
-            backgroundImage:
-                photoURL.isNotEmpty ? NetworkImage(photoURL) : null,
-          ),
-          SizedBox(
-            width: 10,
-          ),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Wrap(
-                children: [
-                  Text(
-                    username,
-                    style: TextStyle(
-                      color: Color.fromRGBO(228, 227, 227, 1),
-                      //rgb(228,227,227)
-                      fontSize: 20,
-                    ),
+    return StreamBuilder<DocumentSnapshot>(
+        stream: DataBaseServices.typingStatusStream(widget.chatRoomID),
+        builder: (context, typingsnapshot) {
+          List users = [Constants.uid, widget.uid];
+          users.sort();
+          return StreamBuilder<Event>(
+              stream: RealtimeDatabase.getStream(),
+              builder: (context, snapshot) {
+                String status = (typingsnapshot.hasData &&
+                        typingsnapshot.data
+                            .get("Typing")[users.indexOf(widget.uid)])
+                    ? "typing..."
+                    : (snapshot.hasData
+                        ? snapshot.data.snapshot.value[widget.uid]["Status"]
+                        : "");
+                if (status == "Offline") {
+                  status = formatTime(Timestamp.fromMicrosecondsSinceEpoch(
+                      snapshot.data.snapshot.value[widget.uid]["LastSeen"]));
+                }
+
+                return GestureDetector(
+                  onTap: () {
+                    messageFocusNode.nextFocus();
+                    Navigator.push(
+                        context,
+                        PageTransition(
+                            alignment: Alignment.topCenter,
+                            duration: Duration(
+                              milliseconds: 300,
+                            ),
+                            child: About(
+                              uid: widget.uid,
+                            ),
+                            type: PageTransitionType.fade));
+                  },
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: <Widget>[
+                      IconButton(
+                        icon: Icon(Icons.arrow_back),
+                        color: Color.fromRGBO(228, 227, 227, 1),
+                        onPressed: () {
+                          Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => Homepage()));
+                        },
+                      ),
+                      CircleAvatar(
+                        backgroundColor: Colors.grey,
+                        backgroundImage:
+                            photoURL.isNotEmpty ? NetworkImage(photoURL) : null,
+                      ),
+                      SizedBox(
+                        width: 10,
+                      ),
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            username,
+                            style: TextStyle(
+                              color: Color.fromRGBO(228, 227, 227, 1),
+                              //rgb(228,227,227)
+                              fontSize: 20,
+                            ),
+                          ),
+                          SizedBox(height: 3),
+                          Row(
+                            children: [
+                              Visibility(
+                                visible: status == "Online" || status == "Away",
+                                child: Container(
+                                  margin: EdgeInsets.only(right: 5),
+                                  width: 8,
+                                  height: 8,
+                                  decoration: BoxDecoration(
+                                    color: status == "Online"
+                                        ? Colors.green
+                                        : Colors.orange,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                              ),
+                              Text(
+                                status == "Offline" ? "" : status,
+                                style: TextStyle(
+                                  color: (status == "Online" ||
+                                          status == "typing...")
+                                      ? Colors.green
+                                      : (status == "Away"
+                                          ? Colors.orange
+                                          : Color.fromRGBO(228, 227, 227, 1)),
+                                  fontSize: 15,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      Spacer(),
+                      popupMenuButton(chatRoomSnapshot, context),
+                    ],
                   ),
-                ],
-              ),
-              Text(
-                email,
-                style: TextStyle(
-                  color: Color.fromRGBO(228, 227, 227, 1),
-                  fontSize: 10,
-                ),
-              ),
-            ],
-          ),
-          Spacer(),
-          popupMenuButton(chatRoomSnapshot, context),
-        ],
-      ),
-    );
+                );
+              });
+        });
   }
 }

@@ -21,7 +21,6 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  DataBaseServices dataBaseServices = new DataBaseServices();
   double progress = 0;
 
   @override
@@ -299,7 +298,7 @@ class _SettingsPageState extends State<SettingsPage> {
             actions: [
               TextButton.icon(
                   onPressed: () async {
-                    dataBaseServices.updateUsername(tdc.text.trim());
+                    DataBaseServices.updateUsername(tdc.text.trim());
                     Navigator.pop(context);
                     setState(() {
                       Constants.userName = tdc.text.trim();
@@ -334,7 +333,7 @@ class _SettingsPageState extends State<SettingsPage> {
             actions: [
               TextButton.icon(
                   onPressed: () async {
-                    dataBaseServices.updateBio(tdc.text.trim());
+                    DataBaseServices.updateBio(tdc.text.trim());
                     Navigator.pop(context);
                     setState(() {
                       Constants.status = tdc.text.trim();
@@ -384,7 +383,7 @@ class _SettingsPageState extends State<SettingsPage> {
     });
     TaskSnapshot taskSnapshot = await uploadTask.whenComplete(() async {
       String downloadURL = await reference.getDownloadURL();
-      dataBaseServices.updateProfilePicture(downloadURL);
+      DataBaseServices.updateProfilePicture(downloadURL);
       setState(() {
         Constants.photoURL = downloadURL;
       });

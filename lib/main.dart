@@ -1,13 +1,18 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:zopek/Modals/Camera.dart';
 import 'package:zopek/Screens/AuthScreens/Signin.dart';
 import 'package:zopek/Screens/HomeScreens/Homepage.dart';
 import 'package:zopek/Services/auth.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'dart:convert';
+
+import 'Services/realtime_database.dart';
 
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   print('Handling message');
@@ -30,6 +35,8 @@ final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+  var dir = await getApplicationDocumentsDirectory();
+  Hive.init(dir.path);
   CameraConfigurations.initialize();
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   await flutterLocalNotificationsPlugin
@@ -61,15 +68,34 @@ class AuthenticityDecider extends StatefulWidget {
   _AuthenticityDeciderState createState() => _AuthenticityDeciderState();
 }
 
-class _AuthenticityDeciderState extends State<AuthenticityDecider> {
+class _AuthenticityDeciderState extends State<AuthenticityDecider>
+    with WidgetsBindingObserver {
   bool isUserLoggedIn = false;
   AuthServices authServices;
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.paused) {
+      RealtimeDatabase.pause();
+    }
+    if (state == AppLifecycleState.resumed) {
+      RealtimeDatabase.resume();
+    }
+  }
+
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    super.dispose();
+  }
+
+  @override
   void initState() {
     super.initState();
-
+    WidgetsBinding.instance.addObserver(this);
     authServices = new AuthServices();
+    RealtimeDatabase.init();
     FirebaseMessaging.instance
         .getInitialMessage()
         .then((RemoteMessage message) {

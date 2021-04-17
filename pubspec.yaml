@@ -38,8 +38,12 @@ dependencies:
   scroll_to_index: 
   linkable: 
   url_launcher: 
+  keyboard_visibility:
+  firebase_database: 
   firebase_storage: 
   path: 
+  hive:
+  hive_flutter:
   photo_view:
   video_compress: ^3.0.0  
   international_phone_field :

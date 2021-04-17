@@ -8,7 +8,7 @@ class AuthServices {
   FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
   GoogleSignIn googleSignIn = new GoogleSignIn();
   Utils utils = new Utils();
-  DataBaseServices dataBaseServices = new DataBaseServices();
+
   String photoURL =
       "https://firebasestorage.googleapis.com/v0/b/zopek-de839.appspot.com/o/default-user.png?alt=media&token=4deff2a2-3dd1-45f0-833d-b4c1ef3dfe22";
 
@@ -29,9 +29,9 @@ class AuthServices {
           (user.phoneNumber == null ? "" : user.phoneNumber),
           searchKeywords);
       String token = await FirebaseMessaging.instance.getToken();
-      dataBaseServices.addMessagingTokens(token, user.uid);
+      DataBaseServices.addMessagingTokens(token, user.uid);
       if (userCredential.additionalUserInfo.isNewUser) {
-        dataBaseServices.uploadUserInfo(map, user.uid);
+        DataBaseServices.uploadUserInfo(map, user.uid);
       }
     } on FirebaseAuthException catch (e) {
       if (e.code == 'user-not-found') {
@@ -57,7 +57,7 @@ class AuthServices {
       List<String> searchKeywords = utils.generateKeywordList(username);
       Map<String, dynamic> map = await utils.mapForAuth(
           username, username, email, photoURL, "", searchKeywords);
-      dataBaseServices.uploadUserInfo(map, user.uid);
+      DataBaseServices.uploadUserInfo(map, user.uid);
     } on FirebaseAuthException catch (e) {
       if (e.code == 'user-not-found') {
         return "The user doesn't exist.";
@@ -74,7 +74,7 @@ class AuthServices {
   Future signOut() async {
     String currentMessagingToken = await FirebaseMessaging.instance.getToken();
     User currentUser = _firebaseAuth.currentUser;
-    dataBaseServices.removeMessagingTokens(
+    DataBaseServices.removeMessagingTokens(
         currentMessagingToken, currentUser.uid);
     await googleSignIn.signOut();
     await _firebaseAuth.signOut();
@@ -104,9 +104,9 @@ class AuthServices {
         (user.phoneNumber == null ? "" : user.phoneNumber),
         searchKeywords);
     String token = await FirebaseMessaging.instance.getToken();
-    dataBaseServices.addMessagingTokens(token, user.uid);
+    DataBaseServices.addMessagingTokens(token, user.uid);
     if (userCredential.additionalUserInfo.isNewUser) {
-      dataBaseServices.uploadUserInfo(map, user.uid);
+      DataBaseServices.uploadUserInfo(map, user.uid);
     }
   }
 }

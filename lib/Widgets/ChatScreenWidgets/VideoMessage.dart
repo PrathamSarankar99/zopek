@@ -5,8 +5,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:hive/hive.dart';
+import 'package:page_transition/page_transition.dart';
 import 'package:path/path.dart';
-import 'package:thumbnails/thumbnails.dart';
+import 'package:zopek/Screens/ChatScreens/SingleVideoPlayer.dart';
 import 'package:zopek/Modals/Constants.dart';
 
 class VideoMessage extends StatefulWidget {
@@ -24,36 +26,6 @@ class VideoMessage extends StatefulWidget {
 
 class _VideoMessageState extends State<VideoMessage> {
   double progress = 0;
-
-  @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-  }
-
-  @override
-  void didUpdateWidget(covariant VideoMessage oldWidget) {
-    setThumbnail();
-    super.didUpdateWidget(oldWidget);
-  }
-
-  @override
-  void deactivate() {
-    if (progress != 0) {
-      super.deactivate();
-    }
-  }
-
-  @override
-  void setState(fn) {
-    if (mounted) {
-      super.setState(fn);
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -187,38 +159,17 @@ class _VideoMessageState extends State<VideoMessage> {
                           ? EdgeInsets.only(right: 22)
                           : EdgeInsets.only(left: 22),
                       decoration: BoxDecoration(
-                        color: Colors.blue,
                         borderRadius: BorderRadius.all(Radius.circular(20)),
                       ),
                       width: 200,
                       height: 170,
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          Visibility(
-                            visible: widget.snapshot.get('VideoURL') != '',
-                            child: Container(
-                              height: 100,
-                              width: 100,
-                              child: Center(
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 1.5,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.white),
-                                ),
-                              ),
-                            ),
-                          ),
-                          ClipRRect(
-                            borderRadius: BorderRadius.all(Radius.circular(20)),
-                            child:
-                                (widget.snapshot.get("Sender") == Constants.uid)
-                                    ? (widget.snapshot.get("VideoURL") != ''
-                                        ? postUpload()
-                                        : preUpload())
-                                    : networkVideo(true),
-                          ),
-                        ],
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.all(Radius.circular(20)),
+                        child: (widget.snapshot.get("Sender") == Constants.uid)
+                            ? (widget.snapshot.get("VideoURL") != ''
+                                ? postUpload(context) //change it to postUpload
+                                : preUpload())
+                            : networkVideo(true),
                       ),
                     ),
                   ),
@@ -244,80 +195,122 @@ class _VideoMessageState extends State<VideoMessage> {
     return 'Replied to themselves';
   }
 
-  postUpload() {
+  postUpload(BuildContext context) {
     return Container(
-      color: Colors.pink,
-    );
-  }
-
-  setThumbnail() {
-    if (widget.snapshot.get("Sender") == Constants.uid) {
-      if (widget.snapshot.get("ThumbnailPath1") == '') {
-        setState(() {
-          Thumbnails.getThumbnail(
-                  videoFile: widget.snapshot.get("FilePath1"),
-                  imageType: ThumbFormat.PNG,
-                  quality: 100)
-              .then((value) {
-            widget.snapshot.reference.update({
-              "ThumbnailPath1": value,
-            });
-          });
-        });
-      }
-    } else {
-      if (widget.snapshot.get("ThumbnailPath2") == '') {
-        setState(() {
-          Thumbnails.getThumbnail(
-                  videoFile: widget.snapshot.get("VideoURL"),
-                  imageType: ThumbFormat.JPEG,
-                  quality: 30)
-              .then((value) {
-            widget.snapshot.reference.update({
-              "ThumbnailPath2": value,
-            });
-          });
-        });
-      }
-    }
-  }
-
-  preUpload() {
-    return Container(
-        child: Center(
+      decoration: BoxDecoration(
+          color: Colors.blue,
+          image: DecorationImage(
+              fit: BoxFit.cover,
+              image: FileImage(
+                File(Hive.box(widget.chatRoomID)
+                    .get("${widget.snapshot.get("FilePath1")}_Thumbnail1")),
+              ))),
       child: Stack(
         alignment: Alignment.center,
-        fit: StackFit.expand,
         children: [
-          ImageFiltered(
-            imageFilter: ImageFilter.blur(
-              sigmaX:
-                  (progress > 0 && progress < 10) ? 10 - progress * 10 : 0.0,
-              sigmaY:
-                  (progress > 0 && progress < 10) ? 10 - progress * 10 : 0.0,
+          TextButton(
+            style: ButtonStyle(
+              shape: MaterialStateProperty.all(CircleBorder()),
+              minimumSize: MaterialStateProperty.all(Size(70, 70)),
+              overlayColor: MaterialStateProperty.all(
+                  Colors.blue.shade400.withOpacity(0.5)),
             ),
-            child: widget.snapshot.get('ThumbnailPath1') == ''
-                ? Container()
-                : Image.file(
-                    File(widget.snapshot.get('ThumbnailPath1')),
-                    fit: BoxFit.cover,
-                  ),
-          ),
-          Container(
-            alignment: Alignment.center,
-            child: Container(
-              width: 90,
-              height: 90,
-              child: CircularProgressIndicator(
-                value: (progress >= 0 && progress < 1) ? progress : null,
-                strokeWidth: 1.5,
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-              ),
+            onPressed: () {
+              Navigator.push(
+                  context,
+                  PageTransition(
+                      child: SingleVideoPlayer(
+                        source: VideoSource(
+                          path: widget.snapshot.get("VideoURL"),
+                          sourceType: SourceType.online,
+                        ),
+                      ),
+                      type: PageTransitionType.fade));
+            },
+            child: Icon(
+              Icons.play_arrow_rounded,
+              color: Colors.white,
+              size: 35,
             ),
           ),
         ],
       ),
-    ));
+    );
+  }
+
+  preUpload() {
+    String key1 = "${widget.snapshot.get("FilePath1")}_Thumbnail1";
+    String key2 = "${widget.snapshot.get("FilePath1")}_Thumbnail2";
+    print("Coming to this method");
+    return Container(
+        color: Colors.blue,
+        child: Center(
+          child: Stack(
+            alignment: Alignment.center,
+            fit: StackFit.expand,
+            children: [
+              ImageFiltered(
+                imageFilter: ImageFilter.blur(
+                  sigmaX: 10,
+                  sigmaY: 10,
+                ),
+                child: widget.snapshot.get("Sender") == Constants.uid
+                    ? StreamBuilder<BoxEvent>(
+                        stream: Hive.box(widget.chatRoomID).watch(key: key1),
+                        builder: (context, snapshot) {
+                          return snapshot.hasData
+                              ? Image.file(
+                                  File(snapshot.data.value),
+                                  fit: BoxFit.cover,
+                                )
+                              : Hive.box(widget.chatRoomID).get(key1) == null
+                                  ? Container(
+                                      color: Colors.blue.shade400,
+                                    )
+                                  : Image.file(
+                                      File(
+                                        Hive.box(widget.chatRoomID).get(key1),
+                                      ),
+                                      fit: BoxFit.cover,
+                                    );
+                        })
+                    : StreamBuilder<BoxEvent>(
+                        stream: Hive.box(widget.chatRoomID).watch(key: key2),
+                        builder: (context, snapshot) {
+                          return Image.file(
+                            File(
+                              snapshot.hasData
+                                  ? snapshot.data.value
+                                  : Hive.box(widget.chatRoomID).get(key2),
+                            ),
+                            fit: BoxFit.cover,
+                          );
+                        }),
+              ),
+              Container(
+                alignment: Alignment.center,
+                child: Container(
+                  width: 90,
+                  height: 90,
+                  child: StreamBuilder<BoxEvent>(
+                      stream: Hive.box(widget.chatRoomID)
+                          .watch(key: widget.snapshot.get("FilePath1")),
+                      builder: (context, snapshot) {
+                        return CircularProgressIndicator(
+                          value: snapshot.hasData
+                              ? snapshot.data.value
+                              : Hive.box(widget.chatRoomID)
+                                  .get(widget.snapshot.get("FilePath1")),
+                          strokeWidth: 1.5,
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Colors.white),
+                        );
+                      }),
+                ),
+              ),
+            ],
+          ),
+        ));
   }
 
   networkVideo(bool needLoader) {
